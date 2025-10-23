@@ -19,22 +19,7 @@ struct My_LibraApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-
-            // 初回起動時にプリセットカテゴリーを登録
-            let context = container.mainContext
-            let fetchDescriptor = FetchDescriptor<Category>()
-            let existingCategories = try? context.fetch(fetchDescriptor)
-
-            if existingCategories?.isEmpty ?? true {
-                let presetCategories = Category.createPresetCategories()
-                for category in presetCategories {
-                    context.insert(category)
-                }
-                try? context.save()
-            }
-
-            return container
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -43,7 +28,32 @@ struct My_LibraApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    initializePresetCategories()
+                }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    /// 初回起動時にプリセットカテゴリーを登録
+    @MainActor
+    private func initializePresetCategories() {
+        let context = sharedModelContainer.mainContext
+        let fetchDescriptor = FetchDescriptor<Category>()
+
+        do {
+            let existingCategories = try context.fetch(fetchDescriptor)
+
+            if existingCategories.isEmpty {
+                let presetCategories = Category.createPresetCategories()
+                for category in presetCategories {
+                    context.insert(category)
+                }
+                try context.save()
+                print("✅ プリセットカテゴリーを登録しました")
+            }
+        } catch {
+            print("⚠️ カテゴリーの初期化エラー: \(error)")
+        }
     }
 }
