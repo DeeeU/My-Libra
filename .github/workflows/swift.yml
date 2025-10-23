@@ -16,7 +16,37 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+
+    - name: Show available simulators
+      run: xcrun simctl list devices available
+
     - name: Build
-      run: swift build -v
+      run: |
+        cd My-Libra
+        xcodebuild clean build \
+          -scheme My-Libra \
+          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
     - name: Run tests
-      run: swift test -v
+      run: |
+        cd My-Libra
+        xcodebuild test \
+          -scheme My-Libra \
+          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -derivedDataPath DerivedData \
+          -enableCodeCoverage YES \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Generate code coverage report
+      run: |
+        cd My-Libra
+        xcrun xccov view --report --json DerivedData/Logs/Test/*.xcresult > coverage.json
+        echo "Code coverage report generated"
