@@ -24,7 +24,31 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
 
+    - name: Check and cache iOS runtime
+      id: ios-runtime-check
+      run: |
+        echo "🔍 Checking for iOS runtime..."
+        if xcrun simctl list runtimes | grep -q "iOS"; then
+          echo "✅ iOS runtime already available"
+          echo "cache_hit=true" >> $GITHUB_OUTPUT
+        else
+          echo "📦 iOS runtime not found, will install"
+          echo "cache_hit=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Cache iOS runtime
+      if: steps.ios-runtime-check.outputs.cache_hit != 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/CoreSimulator/Caches
+          ~/Library/Caches/com.apple.dt.Xcode
+        key: ${{ runner.os }}-ios-runtime-${{ hashFiles('**/Xcode_16.1.app') }}
+        restore-keys: |
+          ${{ runner.os }}-ios-runtime-
+
     - name: Install iOS runtime
+      if: steps.ios-runtime-check.outputs.cache_hit != 'true'
       run: |
         echo "📦 Installing iOS runtime..."
         sudo xcodebuild -runFirstLaunch
