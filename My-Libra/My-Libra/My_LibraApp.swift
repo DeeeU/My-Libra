@@ -11,16 +11,15 @@ import SwiftData
 @main
 struct My_LibraApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Category.self,
-            WishlistItem.self,
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            // SwiftDataのスキーマを直接ModelContainerに渡す（シンプルな方法）
+            let container = try ModelContainer(
+                for: Category.self, WishlistItem.self, Item.self
+            )
+            return container
         } catch {
+            print("❌ ModelContainer作成エラー: \(error)")
+            print("詳細: \(error.localizedDescription)")
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
