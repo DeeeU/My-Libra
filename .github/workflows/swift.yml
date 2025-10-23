@@ -24,6 +24,13 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
 
+    - name: Install iOS runtime
+      run: |
+        echo "📦 Installing iOS runtime..."
+        sudo xcodebuild -runFirstLaunch
+        sudo xcodebuild -downloadPlatform iOS
+        echo "✅ iOS runtime installation complete"
+
     - name: Show available simulators
       run: xcrun simctl list devices available
 
