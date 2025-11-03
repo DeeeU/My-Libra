@@ -24,11 +24,6 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
 
-    - name: List available runtimes
-      run: |
-        echo "📋 Available runtimes:"
-        xcrun simctl list runtimes
-
     - name: Cache iOS runtime
       id: cache-ios-runtime
       uses: actions/cache@v4
@@ -38,35 +33,35 @@ jobs:
         restore-keys: |
           ios-runtime-${{ runner.os }}-
 
-    - name: Install iOS runtime
+    - name: Install iOS runtime and create simulator
       run: |
         echo "📦 Installing iOS runtime..."
         sudo xcodebuild -runFirstLaunch
 
-        # Check if iOS simulators are available
-        if xcrun simctl list devices | grep -q "iPhone"; then
-          echo "✅ iOS simulators already available"
-        else
-          echo "⬇️ Downloading iOS platform..."
-          sudo xcodebuild -downloadPlatform iOS
-          echo "✅ iOS runtime installation complete"
+        echo "⬇️ Downloading iOS platform..."
+        sudo xcodebuild -downloadPlatform iOS
+
+        echo "📋 Listing available runtimes:"
+        xcrun simctl list runtimes
+
+        echo "📋 Listing available device types:"
+        xcrun simctl list devicetypes | grep iPhone
+
+        echo "📱 Creating iPhone 15 simulator..."
+        # Get the iOS runtime identifier
+        RUNTIME=$(xcrun simctl list runtimes iOS -j | python3 -c "import sys, json; runtimes = json.load(sys.stdin)['runtimes']; print(runtimes[-1]['identifier'] if runtimes else '')")
+        echo "Using runtime: $RUNTIME"
+
+        if [ -z "$RUNTIME" ]; then
+          echo "❌ No iOS runtime found"
+          exit 1
         fi
 
-    - name: Show available simulators
-      run: |
-        echo "📱 Available simulators:"
+        # Create simulator
+        xcrun simctl create "iPhone 15 CI" com.apple.CoreSimulator.SimDeviceType.iPhone-15 "$RUNTIME"
+
+        echo "📱 Available simulators after creation:"
         xcrun simctl list devices available
-
-    - name: Create simulator if needed
-      run: |
-        # Check if any iPhone simulator exists
-        if ! xcrun simctl list devices | grep -q "iPhone.*Booted\|iPhone.*Shutdown"; then
-          echo "📱 Creating iPhone 15 simulator..."
-          RUNTIME=$(xcrun simctl list runtimes | grep "iOS" | tail -1 | awk '{print $NF}')
-          echo "Using runtime: $RUNTIME"
-          xcrun simctl create "iPhone 15" "com.apple.CoreSimulator.SimDeviceType.iPhone-15" "$RUNTIME" || true
-        fi
-        echo "✅ Simulator ready"
 
     - name: Build
       run: |
@@ -75,7 +70,7 @@ jobs:
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -destination 'platform=iOS Simulator,name=iPhone 15 CI' \
           -derivedDataPath DerivedData \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -88,7 +83,7 @@ jobs:
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -destination 'platform=iOS Simulator,name=iPhone 15 CI' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
           CODE_SIGN_IDENTITY="" \
