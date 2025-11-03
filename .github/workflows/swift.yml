@@ -53,7 +53,20 @@ jobs:
         fi
 
     - name: Show available simulators
-      run: xcrun simctl list devices available
+      run: |
+        echo "📱 Available simulators:"
+        xcrun simctl list devices available
+
+    - name: Create simulator if needed
+      run: |
+        # Check if any iPhone simulator exists
+        if ! xcrun simctl list devices | grep -q "iPhone.*Booted\|iPhone.*Shutdown"; then
+          echo "📱 Creating iPhone 15 simulator..."
+          RUNTIME=$(xcrun simctl list runtimes | grep "iOS" | tail -1 | awk '{print $NF}')
+          echo "Using runtime: $RUNTIME"
+          xcrun simctl create "iPhone 15" "com.apple.CoreSimulator.SimDeviceType.iPhone-15" "$RUNTIME" || true
+        fi
+        echo "✅ Simulator ready"
 
     - name: Build
       run: |
@@ -62,7 +75,7 @@ jobs:
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination 'generic/platform=iOS Simulator' \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
           -derivedDataPath DerivedData \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -75,7 +88,7 @@ jobs:
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination 'generic/platform=iOS Simulator' \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
           CODE_SIGN_IDENTITY="" \
