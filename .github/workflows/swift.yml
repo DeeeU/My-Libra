@@ -1,7 +1,7 @@
-# This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+# iOS App CI/CD Pipeline
+# Xcode プロジェクトのビルドとテスト
 
-name: Swift
+name: iOS CI
 
 on:
   push:
@@ -10,24 +10,67 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  build-and-test:
+    name: Build and Test
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Select Xcode version
       run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
 
-    - name: Show available simulators
-      run: xcrun simctl list devices available
+    - name: Show Xcode version
+      run: xcodebuild -version
+
+    - name: Cache iOS runtime
+      id: cache-ios-runtime
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Developer/CoreSimulator/Profiles/Runtimes
+        key: ios-runtime-${{ runner.os }}-xcode-16.1
+        restore-keys: |
+          ios-runtime-${{ runner.os }}-
+
+    - name: Install iOS runtime and create simulator
+      run: |
+        echo "📦 Installing iOS runtime..."
+        sudo xcodebuild -runFirstLaunch
+
+        echo "⬇️ Downloading iOS platform..."
+        sudo xcodebuild -downloadPlatform iOS
+
+        echo "📋 Listing available runtimes:"
+        xcrun simctl list runtimes
+
+        echo "📋 Listing available device types:"
+        xcrun simctl list devicetypes | grep iPhone
+
+        echo "📱 Creating iPhone 15 simulator..."
+        # Get the iOS runtime identifier
+        RUNTIME=$(xcrun simctl list runtimes iOS -j | python3 -c "import sys, json; runtimes = json.load(sys.stdin)['runtimes']; print(runtimes[-1]['identifier'] if runtimes else '')")
+        echo "Using runtime: $RUNTIME"
+
+        if [ -z "$RUNTIME" ]; then
+          echo "❌ No iOS runtime found"
+          exit 1
+        fi
+
+        # Create simulator
+        xcrun simctl create "iPhone 15 CI" com.apple.CoreSimulator.SimDeviceType.iPhone-15 "$RUNTIME"
+
+        echo "📱 Available simulators after creation:"
+        xcrun simctl list devices available
 
     - name: Build
       run: |
         cd My-Libra
         xcodebuild clean build \
+          -project My-Libra.xcodeproj \
           -scheme My-Libra \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15 CI' \
           -derivedDataPath DerivedData \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -37,16 +80,34 @@ jobs:
       run: |
         cd My-Libra
         xcodebuild test \
+          -project My-Libra.xcodeproj \
           -scheme My-Libra \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15 CI' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
 
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: My-Libra/DerivedData/Logs/Test/*.xcresult
+
     - name: Generate code coverage report
+      if: success()
       run: |
         cd My-Libra
         xcrun xccov view --report --json DerivedData/Logs/Test/*.xcresult > coverage.json
-        echo "Code coverage report generated"
+        echo "📊 Code Coverage Report"
+        xcrun xccov view --report DerivedData/Logs/Test/*.xcresult
+
+    - name: Upload coverage report
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: My-Libra/coverage.json
