@@ -9,24 +9,31 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Hello World")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+        TabView {
+            WishlistView()
+                .tabItem {
+                    Label("買い物リスト", systemImage: "list.bullet")
+                }
 
-            Text("My-Libra")
-                .font(.title2)
-                .foregroundStyle(.secondary)
+            OwnedItemsView()
+                .tabItem {
+                    Label("保有品", systemImage: "shippingbox")
+                }
 
-            Text("趣味・コレクション品の売買履歴管理アプリ")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding()
+            StatisticsView()
+                .tabItem {
+                    Label("統計", systemImage: "chart.bar")
+                }
+
+            SettingsView()
+                .tabItem {
+                    Label("設定", systemImage: "gearshape")
+                }
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: [WishlistItem.self, Category.self, Item.self])
 }
