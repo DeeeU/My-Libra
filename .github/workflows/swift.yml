@@ -48,96 +48,46 @@ jobs:
         xcrun simctl list devicetypes | grep iPhone
 
         echo "📋 Existing simulators:"
-        xcrun simctl list devices
-
-    - name: Start CoreSimulator service
-      run: |
-        echo "🔧 Starting CoreSimulator service..."
-        # Kill any existing simulator processes
-        killall -9 Simulator 2>/dev/null || true
-
-        # Wait a moment for cleanup
-        sleep 2
-
-        # Check and start CoreSimulator service if needed
-        launchctl list | grep com.apple.CoreSimulator.CoreSimulatorService || \
-        open -a Simulator --background
-
-        # Wait for simulator to be ready
-        sleep 5
-
-    - name: Setup simulator
-      run: |
-        set -e
-
-        echo "📱 Setting up iPhone 15 simulator..."
-
-        # Get the latest iOS 17 runtime (more compatible than trying to get latest)
-        RUNTIME=$(xcrun simctl list runtimes iOS -j | \
-          grep -o 'com\.apple\.CoreSimulator\.SimRuntime\.iOS-[0-9-]*' | \
-          sort -V | tail -n 1)
-
-        echo "Using runtime: $RUNTIME"
-
-        if [ -z "$RUNTIME" ]; then
-          echo "❌ No iOS runtime found. Available runtimes:"
-          xcrun simctl list runtimes
-          exit 1
-        fi
-
-        # Check if iPhone 15 device type exists, fallback to iPhone 14
-        DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-15"
-        if ! xcrun simctl list devicetypes | grep -q "$DEVICE_TYPE"; then
-          echo "⚠️ iPhone 15 not available, using iPhone 14"
-          DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-14"
-        fi
-
-        echo "Using device type: $DEVICE_TYPE"
-
-        # Delete old CI simulator if it exists
-        EXISTING_SIM=$(xcrun simctl list devices | grep "iPhone 15 CI" | grep -o '[A-F0-9-]\{36\}' | head -n 1 || true)
-        if [ ! -z "$EXISTING_SIM" ]; then
-          echo "🗑️ Deleting existing simulator: $EXISTING_SIM"
-          xcrun simctl delete "$EXISTING_SIM" || true
-        fi
-
-        # Create simulator
-        echo "📱 Creating simulator..."
-        SIMULATOR_ID=$(xcrun simctl create "iPhone 15 CI" "$DEVICE_TYPE" "$RUNTIME")
-        echo "Created simulator with ID: $SIMULATOR_ID"
-
-        # Save simulator ID to environment file for next steps
-        echo "SIMULATOR_ID=$SIMULATOR_ID" >> $GITHUB_ENV
-        echo "SIMULATOR_NAME=iPhone 15 CI" >> $GITHUB_ENV
-
-        # Boot the simulator
-        echo "🚀 Booting simulator..."
-        xcrun simctl boot "$SIMULATOR_ID"
-
-        # Wait for simulator to be ready with retry logic
-        echo "⏳ Waiting for simulator to be ready..."
-        for i in {1..30}; do
-          if xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; then
-            echo "✅ Simulator is booted and ready"
-            break
-          fi
-          echo "Waiting for boot... ($i/30)"
-          sleep 2
-        done
-
-        # Verify simulator is accessible
-        if ! xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; then
-          echo "❌ Simulator failed to boot"
-          xcrun simctl list devices
-          exit 1
-        fi
-
-        echo "📱 Available simulators after setup:"
         xcrun simctl list devices available
 
-        # Additional wait for xcodebuild to recognize the simulator
-        echo "⏳ Waiting for xcodebuild to recognize simulator..."
-        sleep 10
+    - name: Prepare simulator
+      run: |
+        echo "📱 Preparing simulator..."
+
+        # Find an existing iPhone simulator (prefer iPhone 15 or 14)
+        SIMULATOR_ID=$(xcrun simctl list devices available -j | \
+          python3 -c "import sys, json; devices = json.load(sys.stdin)['devices']; \
+          all_sims = [sim for runtime_sims in devices.values() for sim in runtime_sims if 'iPhone' in sim.get('name', '') and sim.get('isAvailable', False)]; \
+          print(all_sims[0]['udid'] if all_sims else '')")
+
+        if [ -z "$SIMULATOR_ID" ]; then
+          echo "❌ No available iPhone simulator found"
+          xcrun simctl list devices available
+          exit 1
+        fi
+
+        echo "✅ Using simulator: $SIMULATOR_ID"
+
+        # Save to GITHUB_ENV
+        echo "SIMULATOR_ID=$SIMULATOR_ID" >> $GITHUB_ENV
+
+        # Get simulator name
+        SIMULATOR_NAME=$(xcrun simctl list devices -j | \
+          python3 -c "import sys, json; devices = json.load(sys.stdin)['devices']; \
+          all_sims = [sim for runtime_sims in devices.values() for sim in runtime_sims if sim.get('udid') == '$SIMULATOR_ID']; \
+          print(all_sims[0]['name'] if all_sims else '')")
+
+        echo "SIMULATOR_NAME=$SIMULATOR_NAME" >> $GITHUB_ENV
+        echo "📱 Simulator name: $SIMULATOR_NAME"
+
+        # Boot the simulator if not already booted
+        if ! xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; then
+          echo "🚀 Booting simulator..."
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          sleep 10
+        else
+          echo "✅ Simulator already booted"
+        fi
 
     - name: Verify build destinations
       run: |
@@ -148,19 +98,20 @@ jobs:
           -showdestinations
 
         echo ""
-        echo "📱 Simulator we created:"
-        echo "ID: $SIMULATOR_ID"
-        echo "Name: $SIMULATOR_NAME"
-        xcrun simctl list devices | grep "$SIMULATOR_ID"
+        echo "📱 Simulator we will use:"
+        echo "ID: ${{ env.SIMULATOR_ID }}"
+        echo "Name: ${{ env.SIMULATOR_NAME }}"
 
     - name: Build
       run: |
         cd My-Libra
+
+        # Use generic destination for build (more reliable)
         xcodebuild clean build \
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+          -destination 'generic/platform=iOS Simulator' \
           -derivedDataPath DerivedData \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -175,7 +126,7 @@ jobs:
           -project My-Libra.xcodeproj \
           -scheme My-Libra \
           -sdk iphonesimulator \
-          -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+          -destination "platform=iOS Simulator,id=${{ env.SIMULATOR_ID }}" \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
           CODE_SIGN_IDENTITY="" \
