@@ -12,55 +12,117 @@ on:
 jobs:
   build-and-test:
     name: Build and Test
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Show available Xcode versions
+      run: ls /Applications | grep Xcode
+
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+      run: |
+        # Use latest available Xcode (defaults to Xcode 16.1 or latest on macos-15)
+        sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
     - name: Show Xcode version
       run: xcodebuild -version
 
-    - name: Cache iOS runtime
-      id: cache-ios-runtime
-      uses: actions/cache@v4
-      with:
-        path: ~/Library/Developer/CoreSimulator/Profiles/Runtimes
-        key: ios-runtime-${{ runner.os }}-xcode-16.1
-        restore-keys: |
-          ios-runtime-${{ runner.os }}-
-
-    - name: Install iOS runtime and create simulator
+    - name: Show available simulators and runtimes
       run: |
-        echo "📦 Installing iOS runtime..."
-        sudo xcodebuild -runFirstLaunch
+        echo "📋 Available Xcode installations:"
+        mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode'"
 
-        echo "⬇️ Downloading iOS platform..."
-        sudo xcodebuild -downloadPlatform iOS
-
-        echo "📋 Listing available runtimes:"
+        echo "📋 Available runtimes:"
         xcrun simctl list runtimes
 
-        echo "📋 Listing available device types:"
+        echo "📋 Available device types:"
         xcrun simctl list devicetypes | grep iPhone
 
-        echo "📱 Creating iPhone 15 simulator..."
-        # Get the iOS runtime identifier
-        RUNTIME=$(xcrun simctl list runtimes iOS -j | python3 -c "import sys, json; runtimes = json.load(sys.stdin)['runtimes']; print(runtimes[-1]['identifier'] if runtimes else '')")
+        echo "📋 Existing simulators:"
+        xcrun simctl list devices
+
+    - name: Start CoreSimulator service
+      run: |
+        echo "🔧 Starting CoreSimulator service..."
+        # Kill any existing simulator processes
+        killall -9 Simulator 2>/dev/null || true
+
+        # Wait a moment for cleanup
+        sleep 2
+
+        # Check and start CoreSimulator service if needed
+        launchctl list | grep com.apple.CoreSimulator.CoreSimulatorService || \
+        open -a Simulator --background
+
+        # Wait for simulator to be ready
+        sleep 5
+
+    - name: Setup simulator
+      run: |
+        set -e
+
+        echo "📱 Setting up iPhone 15 simulator..."
+
+        # Get the latest iOS 17 runtime (more compatible than trying to get latest)
+        RUNTIME=$(xcrun simctl list runtimes iOS -j | \
+          grep -o 'com\.apple\.CoreSimulator\.SimRuntime\.iOS-[0-9-]*' | \
+          sort -V | tail -n 1)
+
         echo "Using runtime: $RUNTIME"
 
         if [ -z "$RUNTIME" ]; then
-          echo "❌ No iOS runtime found"
+          echo "❌ No iOS runtime found. Available runtimes:"
+          xcrun simctl list runtimes
           exit 1
         fi
 
-        # Create simulator
-        xcrun simctl create "iPhone 15 CI" com.apple.CoreSimulator.SimDeviceType.iPhone-15 "$RUNTIME"
+        # Check if iPhone 15 device type exists, fallback to iPhone 14
+        DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-15"
+        if ! xcrun simctl list devicetypes | grep -q "$DEVICE_TYPE"; then
+          echo "⚠️ iPhone 15 not available, using iPhone 14"
+          DEVICE_TYPE="com.apple.CoreSimulator.SimDeviceType.iPhone-14"
+        fi
 
-        echo "📱 Available simulators after creation:"
+        echo "Using device type: $DEVICE_TYPE"
+
+        # Delete old CI simulator if it exists
+        EXISTING_SIM=$(xcrun simctl list devices | grep "iPhone 15 CI" | grep -o '[A-F0-9-]\{36\}' | head -n 1 || true)
+        if [ ! -z "$EXISTING_SIM" ]; then
+          echo "🗑️ Deleting existing simulator: $EXISTING_SIM"
+          xcrun simctl delete "$EXISTING_SIM" || true
+        fi
+
+        # Create simulator
+        echo "📱 Creating simulator..."
+        SIMULATOR_ID=$(xcrun simctl create "iPhone 15 CI" "$DEVICE_TYPE" "$RUNTIME")
+        echo "Created simulator with ID: $SIMULATOR_ID"
+
+        # Boot the simulator
+        echo "🚀 Booting simulator..."
+        xcrun simctl boot "$SIMULATOR_ID"
+
+        # Wait for simulator to be ready with retry logic
+        echo "⏳ Waiting for simulator to be ready..."
+        for i in {1..30}; do
+          if xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; then
+            echo "✅ Simulator is booted and ready"
+            break
+          fi
+          echo "Waiting for boot... ($i/30)"
+          sleep 2
+        done
+
+        # Verify simulator is accessible
+        if ! xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; then
+          echo "❌ Simulator failed to boot"
+          xcrun simctl list devices
+          exit 1
+        fi
+
+        echo "📱 Available simulators after setup:"
         xcrun simctl list devices available
 
     - name: Build
