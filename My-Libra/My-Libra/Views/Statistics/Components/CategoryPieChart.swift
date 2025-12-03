@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Charts
 
 struct CategoryData: Identifiable {
@@ -127,7 +128,7 @@ struct CategoryPieChart: View {
         context.insert(item)
     }
 
-    return ScrollView {
+    ScrollView {
         CategoryPieChart(items: items)
     }
     .modelContainer(container)

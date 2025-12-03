@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Charts
 
 struct MonthlyData: Identifiable {
@@ -196,7 +197,7 @@ struct MonthlyChart: View {
 
     let allItems = try! context.fetch(FetchDescriptor<Item>())
 
-    return ScrollView {
+    ScrollView {
         MonthlyChart(items: allItems)
     }
     .modelContainer(container)
