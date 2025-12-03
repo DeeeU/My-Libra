@@ -30,15 +30,11 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
 
-    - name: Install iOS platform
+    - name: Prepare Xcode
       run: |
-        echo "📦 Installing iOS platform..."
-        sudo xcodebuild -runFirstLaunch
-
-        echo "⬇️ Downloading iOS platform..."
-        sudo xcodebuild -downloadPlatform iOS
-
-        echo "✅ iOS platform installation complete"
+        echo "🔧 Preparing Xcode first launch..."
+        sudo xcodebuild -runFirstLaunch || true
+        echo "✅ Xcode preparation complete"
 
     - name: Show available simulators and runtimes
       run: |
