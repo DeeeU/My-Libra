@@ -58,14 +58,14 @@ final class ModelTests: XCTestCase {
         let item = WishlistItem(
             name: "ポケモンカード",
             category: "カードゲーム",
-            estimatedPrice: Decimal(1000),
+            estimatedPrice: 1000,
             memo: "欲しい"
         )
 
         XCTAssertNotNil(item.id)
         XCTAssertEqual(item.name, "ポケモンカード")
         XCTAssertEqual(item.category, "カードゲーム")
-        XCTAssertEqual(item.estimatedPrice, Decimal(1000))
+        XCTAssertEqual(item.estimatedPrice, 1000)
         XCTAssertEqual(item.memo, "欲しい")
         XCTAssertFalse(item.isPurchased)
         XCTAssertNotNil(item.createdAt)
@@ -84,7 +84,7 @@ final class ModelTests: XCTestCase {
         let item = Item(
             name: "スニーカー",
             category: "靴・スニーカー",
-            purchasePrice: Decimal(15000),
+            purchasePrice: 15000,
             purchaseDate: Date(),
             condition: .new,
             memo: "限定品"
@@ -93,7 +93,7 @@ final class ModelTests: XCTestCase {
         XCTAssertNotNil(item.id)
         XCTAssertEqual(item.name, "スニーカー")
         XCTAssertEqual(item.category, "靴・スニーカー")
-        XCTAssertEqual(item.purchasePrice, Decimal(15000))
+        XCTAssertEqual(item.purchasePrice, 15000)
         XCTAssertEqual(item.condition, .new)
         XCTAssertEqual(item.memo, "限定品")
         XCTAssertEqual(item.status, .owned)
@@ -106,7 +106,7 @@ final class ModelTests: XCTestCase {
         let item = Item(
             name: "フィギュア",
             category: "フィギュア",
-            purchasePrice: Decimal(3000),
+            purchasePrice: 3000,
             purchaseDate: Date(),
             condition: .new
         )
@@ -115,8 +115,8 @@ final class ModelTests: XCTestCase {
         XCTAssertNil(item.profit)
 
         // 売却後（利益）
-        item.markAsSold(salePrice: Decimal(5000), saleDate: Date())
-        XCTAssertEqual(item.profit, Decimal(2000))
+        item.markAsSold(salePrice: 5000, saleDate: Date())
+        XCTAssertEqual(item.profit, 2000)
         XCTAssertEqual(item.status, .sold)
     }
 
@@ -124,32 +124,32 @@ final class ModelTests: XCTestCase {
         let item = Item(
             name: "本",
             category: "本・漫画",
-            purchasePrice: Decimal(1000),
+            purchasePrice: 1000,
             purchaseDate: Date(),
             condition: .used
         )
 
         // 損失の場合
-        item.markAsSold(salePrice: Decimal(500), saleDate: Date())
-        XCTAssertEqual(item.profit, Decimal(-500))
+        item.markAsSold(salePrice: 500, saleDate: Date())
+        XCTAssertEqual(item.profit, -500)
     }
 
     func testItemMarkAsSold() {
         let item = Item(
             name: "ゲーム",
             category: "ゲーム",
-            purchasePrice: Decimal(6000),
+            purchasePrice: 6000,
             purchaseDate: Date(),
             condition: .used
         )
 
         let saleDate = Date()
-        item.markAsSold(salePrice: Decimal(4000), saleDate: saleDate)
+        item.markAsSold(salePrice: 4000, saleDate: saleDate)
 
         XCTAssertEqual(item.status, .sold)
-        XCTAssertEqual(item.salePrice, Decimal(4000))
+        XCTAssertEqual(item.salePrice, 4000)
         XCTAssertEqual(item.saleDate, saleDate)
-        XCTAssertEqual(item.profit, Decimal(-2000))
+        XCTAssertEqual(item.profit, -2000)
     }
 
     // MARK: - Enum Tests
@@ -200,7 +200,7 @@ final class ModelTests: XCTestCase {
         let item = Item(
             name: "テストアイテム",
             category: "その他",
-            purchasePrice: Decimal(1000),
+            purchasePrice: 1000,
             purchaseDate: Date(),
             condition: .new
         )

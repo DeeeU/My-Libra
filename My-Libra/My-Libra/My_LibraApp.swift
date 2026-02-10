@@ -12,11 +12,12 @@ import SwiftData
 struct My_LibraApp: App {
     var sharedModelContainer: ModelContainer = {
         do {
-            // SwiftDataのスキーマを直接ModelContainerに渡す（シンプルな方法）
-            let container = try ModelContainer(
-                for: Category.self, WishlistItem.self, Item.self
+            // シンプルな初期化方法
+            return try ModelContainer(
+                for: Category.self,
+                WishlistItem.self,
+                Item.self
             )
-            return container
         } catch {
             print("❌ ModelContainer作成エラー: \(error)")
             print("詳細: \(error.localizedDescription)")
