@@ -51,11 +51,24 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
   - SwiftData統合
   - テスト14件すべて成功
 - ✅ Phase 2: アプリ基盤構築完了
-  - ユーティリティ拡張実装 (Date, Decimal, View)
+  - ユーティリティ拡張実装 (Date, Double, View, Color, String)
   - TabView実装 (4タブ)
   - 各タブの基本ビュー作成
-  - ビルド・テスト成功
-- 🔄 Phase 3: 買い物リスト機能実装中
+- ✅ Phase 3: 買い物リスト機能完了
+  - WishlistView (検索・カテゴリフィルター・スワイプアクション)
+  - AddWishlistItemView (バリデーション付きフォーム)
+  - PurchaseDetailView (買い物リスト→購入済み変換)
+- ✅ Phase 4: 保有品管理機能完了
+  - OwnedItemsView (フィルター・ソート・検索)
+  - ItemDetailView / EditItemView / SellItemView
+  - 売却処理・損益計算・写真管理
+- ✅ Phase 5: 統計機能完了
+  - 期間フィルター (今月/3ヶ月/6ヶ月/今年/全期間)
+  - サマリーカード (2x2グリッド)
+  - カテゴリ別支出円グラフ (Swift Charts SectorMark)
+  - 月次購入額棒グラフ (BarMark)
+  - 月次損益折れ線グラフ (LineMark + AreaMark)
+- 🔄 Phase 6: 設定機能 (次のフェーズ)
 - ⏳ リリース準備
 
 ### フェーズ2: クラウド版 (予定)
@@ -381,7 +394,10 @@ open My-Libra.xcodeproj
 
 ### 2025 Q4
 - [x] 仕様策定
-- [ ] フェーズ1実装
+- [x] Phase 1-2: データモデル・アプリ基盤
+- [x] Phase 3-4: 買い物リスト・保有品管理
+- [x] Phase 5: 統計機能
+- [ ] Phase 6: 設定機能
 - [ ] TestFlightベータ配信
 - [ ] App Store公開
 
