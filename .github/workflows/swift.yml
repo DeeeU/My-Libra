@@ -6,8 +6,20 @@ name: iOS CI
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -25,20 +37,15 @@ jobs:
         echo "📱 Available iPhone Simulators:"
         xcrun simctl list devices available | grep -E "iPhone" | head -10
 
-    - name: Build
-      working-directory: My-Libra
-      run: |
-        xcodebuild clean build \
-          -project My-Libra.xcodeproj \
-          -scheme My-Libra \
-          -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-          -configuration Release \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+    - name: Restore DerivedData cache
+      uses: actions/cache@v4
+      with:
+        path: My-Libra/DerivedData
+        key: deriveddata-${{ runner.os }}-${{ hashFiles('My-Libra/**/*.swift', 'My-Libra/**/*.pbxproj') }}
+        restore-keys: |
+          deriveddata-${{ runner.os }}-
 
-    - name: Run Tests
+    - name: Build and Test
       working-directory: My-Libra
       run: |
         xcodebuild test \
@@ -47,7 +54,10 @@ jobs:
           -sdk iphonesimulator \
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
           -derivedDataPath DerivedData \
+          -configuration Debug \
           -enableCodeCoverage YES \
+          -parallel-testing-enabled YES \
+          -maximum-concurrent-test-simulator-destinations 2 \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
