@@ -110,6 +110,7 @@ Main TabView with 4 tabs:
 ## Development Workflow
 
 機能開発は以下のワークフローに従うこと。各ステップで適切なサブエージェントを活用する。
+また、githubはmcpで接続するようにする。
 
 ### 1. ブランチ作成
 最新の `main` からフィーチャーブランチを作成する。
