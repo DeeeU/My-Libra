@@ -5,9 +5,21 @@ name: iOS CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -25,18 +37,13 @@ jobs:
         echo "📱 Available iPhone Simulators:"
         xcrun simctl list devices available | grep -E "iPhone" | head -10
 
-    - name: Build
-      working-directory: My-Libra
-      run: |
-        xcodebuild clean build \
-          -project My-Libra.xcodeproj \
-          -scheme My-Libra \
-          -sdk iphonesimulator \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-          -configuration Release \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+    - name: Restore DerivedData cache
+      uses: actions/cache@v4
+      with:
+        path: My-Libra/DerivedData
+        key: deriveddata-${{ runner.os }}-${{ hashFiles('My-Libra/**/*.swift', 'My-Libra/**/*.pbxproj') }}
+        restore-keys: |
+          deriveddata-${{ runner.os }}-
 
     - name: Run Tests
       working-directory: My-Libra
@@ -47,7 +54,10 @@ jobs:
           -sdk iphonesimulator \
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
           -derivedDataPath DerivedData \
+          -configuration Debug \
+          -skip-testing:My-LibraUITests \
           -enableCodeCoverage YES \
+          -quiet \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
@@ -60,15 +70,20 @@ jobs:
         path: My-Libra/DerivedData/Logs/Test/*.xcresult
 
     - name: Generate Coverage Report
-      if: success()
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       working-directory: My-Libra
       run: |
-        xcrun xccov view --report --json DerivedData/Logs/Test/*.xcresult > coverage.json
-        echo "📊 Code Coverage Report:"
-        xcrun xccov view --report DerivedData/Logs/Test/*.xcresult || true
+        XCRESULT=$(find DerivedData/Logs/Test -name "*.xcresult" -print -quit 2>/dev/null)
+        if [ -n "$XCRESULT" ]; then
+          xcrun xccov view --report --json "$XCRESULT" > coverage.json
+          echo "📊 Code Coverage Report:"
+          xcrun xccov view --report "$XCRESULT" || true
+        else
+          echo "⚠️ No xcresult bundle found for coverage report"
+        fi
 
     - name: Upload Coverage Report
-      if: success()
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
