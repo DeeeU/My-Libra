@@ -68,14 +68,16 @@ struct SFSymbolPickerView: View {
     static let availableSymbols: [String] = [
         // 一般
         "star.fill", "heart.fill", "tag.fill", "bookmark.fill",
-        "bag.fill", "cart.fill", "gift.fill", "cube.box.fill",
+        "bag.fill", "cart.fill", "gift.fill",
+        "cube.box", "cube.box.fill",
         // ホビー・コレクション
         "rectangle.portrait.on.rectangle.portrait", "figure.stand",
-        "gamecontroller.fill", "book.fill", "film.fill",
+        "gamecontroller", "gamecontroller.fill",
+        "book", "book.fill", "film.fill",
         "music.note", "paintbrush.fill", "theatermasks.fill",
         "puzzlepiece.fill", "trophy.fill", "ticket.fill",
         // ファッション
-        "shoe.fill", "tshirt.fill", "eyeglasses",
+        "shoe", "shoe.fill", "tshirt.fill", "eyeglasses",
         // テクノロジー
         "iphone", "desktopcomputer", "headphones",
         "watch.analog", "camera.fill", "tv.fill",
