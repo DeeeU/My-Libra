@@ -1,0 +1,39 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- iOS風の角丸四角形背景 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFB800;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF9500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 (iOSアイコンの角丸は約22.37%の半径) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="229" ry="229" fill="url(#bgGradient)"/>
+  
+  <!-- 天秤のデザイン (中央に配置、サイズを大きく) -->
+  <!-- 中央の柱 -->
+  <rect x="487" y="320" width="50" height="350" fill="#FFFFFF" rx="10"/>
+  
+  <!-- 横棒 -->
+  <rect x="237" y="340" width="550" height="45" fill="#FFFFFF" rx="15"/>
+  
+  <!-- 左側の皿 -->
+  <ellipse cx="312" cy="445" rx="100" ry="35" fill="#FFD700" stroke="#FFFFFF" stroke-width="8"/>
+  <path d="M 212 445 Q 212 495, 312 505 Q 412 495, 412 445" fill="#FFFFFF" stroke="#FFD700" stroke-width="8"/>
+  <line x1="230" y1="445" x2="312" y2="370" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <line x1="394" y1="445" x2="312" y2="370" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- 右側の皿 -->
+  <ellipse cx="712" cy="445" rx="100" ry="35" fill="#FFD700" stroke="#FFFFFF" stroke-width="8"/>
+  <path d="M 612 445 Q 612 495, 712 505 Q 812 495, 812 445" fill="#FFFFFF" stroke="#FFD700" stroke-width="8"/>
+  <line x1="630" y1="445" x2="712" y2="370" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <line x1="794" y1="445" x2="712" y2="370" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- 台座 -->
+  <rect x="412" y="670" width="200" height="45" fill="#FFFFFF" rx="10"/>
+  
+  <!-- 装飾的な星 -->
+  <circle cx="512" cy="260" r="22" fill="#FFD700"/>
+  <circle cx="450" cy="280" r="14" fill="#FFD700"/>
+  <circle cx="574" cy="280" r="14" fill="#FFD700"/>
+</svg>
