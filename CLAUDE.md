@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **My-Libra** is an iOS application for managing hobby and collectible item purchases and sales. The app tracks purchases, sales, and calculates profits/losses with visualization features.
 
-**Current Status**: Project is in the planning/specification phase. The Xcode project and Swift code have not been created yet. Only documentation (README.md) exists.
+**Current Status**: Phase 1-5完了。Phase 6（設定機能）が次のフェーズ。
 
 **Primary Language**: Japanese (documentation and UI)
 
@@ -107,26 +107,68 @@ Main TabView with 4 tabs:
 3. 📊 Statistics (統計)
 4. ⚙️ Settings (設定)
 
-## Development Commands
+## Development Workflow
 
-**Note**: Xcode project doesn't exist yet. When created, use:
+機能開発は以下のワークフローに従うこと。各ステップで適切なサブエージェントを活用する。
+
+### 1. ブランチ作成
+最新の `main` からフィーチャーブランチを作成する。
+```bash
+git checkout main && git pull origin main
+git checkout -b feature/<phase-or-feature-name>
+```
+
+### 2. 調査 (Explore agent)
+`Explore` サブエージェントで既存コードベースのパターン・構造を調査する。
+
+### 3. 設計 (Plan agent)
+`Plan` サブエージェントで実装計画を設計し、ユーザーに承認を得る。
+
+### 4. 実装
+計画に基づいてコードを実装する。
+
+### 5. テスト実行
+ビルドとテストを実行して動作を確認する。
+```bash
+# Build
+xcodebuild build -project My-Libra.xcodeproj -scheme My-Libra \
+  -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+  -configuration Debug CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+# Test
+xcodebuild test -project My-Libra.xcodeproj -scheme My-Libra \
+  -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+```
+Working directory: `My-Libra/`
+
+### 6. レビュー (3エージェント並列実行)
+以下の3つのレビューエージェントを**並列**で実行する。すべてのレビューが完了してから次に進む。
+- `diff-validator` — 変更の整合性・制約違反チェック
+- `code-stability-reviewer` — 安定性・潜在バグチェック
+- `coderabbit:code-reviewer` — 包括的なコード品質レビュー
+
+### 7. PR作成
+コミットしてリモートにプッシュし、MCP github tools (`mcp__github__create_pull_request`) でPRを作成する。
+`gh` CLIは未認証のため使用しない。
+
+## Development Commands
 
 ### Build and Run
 ```bash
-# Open Xcode project
-open My-Libra.xcodeproj
+# Working directory: My-Libra/
+xcodebuild -project My-Libra.xcodeproj -scheme My-Libra \
+  -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' build
 
-# Or build from command line (after project creation)
-xcodebuild -scheme My-Libra -destination 'platform=iOS Simulator,name=iPhone 15' build
+# Open in Xcode
+open My-Libra/My-Libra.xcodeproj
 ```
 
 ### Run Tests
 ```bash
 # Run all tests
-xcodebuild test -scheme My-Libra -destination 'platform=iOS Simulator,name=iPhone 15'
-
-# Run specific test
-xcodebuild test -scheme My-Libra -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:My-LibraTests/YourTestCase
+xcodebuild test -project My-Libra.xcodeproj -scheme My-Libra \
+  -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
 ```
 
 ## Implementation Guidelines
@@ -185,11 +227,18 @@ When implementing features, ensure these scenarios work:
 
 ## Development Phases
 
-### Phase 1 (Current Target)
-Focus on local-only functionality with SwiftData. No AWS integration yet.
+### Phase 1-5 (完了)
+- Phase 1: データモデル (Enums, Category, WishlistItem, Item)
+- Phase 2: アプリ基盤 (SwiftData, TabView, Extensions)
+- Phase 3: 買い物リスト機能
+- Phase 4: 保有品管理機能
+- Phase 5: 統計機能 (Swift Charts)
 
-### Phase 2 (Future)
-AWS integration, cloud sync, multi-device support.
+### Phase 6 (次のフェーズ)
+設定機能 (カテゴリー管理, データエクスポート, アプリ情報)
+
+### フェーズ2 (将来)
+AWS統合, クラウド同期, 複数デバイス対応
 
 ## Notes for AI Development
 
@@ -200,3 +249,4 @@ AWS integration, cloud sync, multi-device support.
 - Implement proper error handling for data operations
 - Support both Light and Dark modes
 - Ensure accessibility (VoiceOver, Dynamic Type)
+- CI/CD: GitHub Actions on macos-15 (`.github/workflows/swift.yml`)
