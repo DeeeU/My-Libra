@@ -11,20 +11,20 @@ import SwiftData
 /// 購入済みアイテム
 @Model
 final class Item {
-    @Attribute(.unique) var id: UUID
+    var id: UUID
     var name: String
     var category: String
-    var purchasePrice: Decimal
+    var purchasePrice: Double
     var purchaseDate: Date
     var condition: ItemCondition
     var memo: String?
-    @Attribute(.externalStorage) var imageData: Data?
+    var imageData: Data?
     var status: ItemStatus
-    var salePrice: Decimal?
+    var salePrice: Double?
     var saleDate: Date?
 
     /// 損益（計算プロパティ）
-    var profit: Decimal? {
+    var profit: Double? {
         guard let salePrice = salePrice else { return nil }
         return salePrice - purchasePrice
     }
@@ -32,7 +32,7 @@ final class Item {
     init(
         name: String,
         category: String,
-        purchasePrice: Decimal,
+        purchasePrice: Double,
         purchaseDate: Date,
         condition: ItemCondition,
         memo: String? = nil,
@@ -52,7 +52,7 @@ final class Item {
     }
 
     /// 売却処理
-    func markAsSold(salePrice: Decimal, saleDate: Date) {
+    func markAsSold(salePrice: Double, saleDate: Date) {
         self.status = .sold
         self.salePrice = salePrice
         self.saleDate = saleDate

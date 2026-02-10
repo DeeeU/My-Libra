@@ -6,27 +6,45 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    @State private var selectedTab = 0
+
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Hello World")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+        TabView(selection: $selectedTab) {
+            // 買い物リスト
+            WishlistView()
+                .tabItem {
+                    Label("買い物リスト", systemImage: "cart")
+                }
+                .tag(0)
 
-            Text("My-Libra")
-                .font(.title2)
-                .foregroundStyle(.secondary)
+            // 保有品
+            OwnedItemsView()
+                .tabItem {
+                    Label("保有品", systemImage: "shippingbox")
+                }
+                .tag(1)
 
-            Text("趣味・コレクション品の売買履歴管理アプリ")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding()
+            // 統計
+            StatisticsView()
+                .tabItem {
+                    Label("統計", systemImage: "chart.bar")
+                }
+                .tag(2)
+
+            // 設定
+            SettingsView()
+                .tabItem {
+                    Label("設定", systemImage: "gearshape")
+                }
+                .tag(3)
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: [Category.self, WishlistItem.self, Item.self])
 }
