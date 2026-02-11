@@ -16,6 +16,9 @@ struct WishlistView: View {
     @State private var viewModel = WishlistViewModel()
     @State private var showingAddSheet = false
     @State private var itemToPurchase: WishlistItem?
+    @State private var showToast = false
+    @State private var toastMessage = ""
+    @State private var toastStyle: ToastStyle = .success
 
     var body: some View {
         NavigationStack {
@@ -96,14 +99,23 @@ struct WishlistView: View {
             .sheet(item: $itemToPurchase) { item in
                 PurchaseDetailView(wishlistItem: item)
             }
+            .toast(isPresented: $showToast, message: toastMessage, style: toastStyle)
         }
     }
 
     // MARK: - Actions
 
     private func deleteItem(_ item: WishlistItem) {
-        modelContext.delete(item)
-        try? modelContext.save()
+        withAnimation {
+            modelContext.delete(item)
+            do {
+                try modelContext.save()
+            } catch {
+                toastMessage = "削除に失敗しました"
+                toastStyle = .error
+                showToast = true
+            }
+        }
     }
 }
 
@@ -147,6 +159,7 @@ struct WishlistItemRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -174,6 +187,8 @@ struct FilterChip: View {
             .foregroundStyle(isSelected ? .white : .primary)
             .cornerRadius(16)
         }
+        .accessibilityLabel("\(title)カテゴリー")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

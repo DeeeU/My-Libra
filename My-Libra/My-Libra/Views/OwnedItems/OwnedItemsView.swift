@@ -118,8 +118,10 @@ struct OwnedItemsView: View {
     // MARK: - Actions
 
     private func deleteItem(_ item: Item) {
-        modelContext.delete(item)
-        try? modelContext.save()
+        withAnimation {
+            modelContext.delete(item)
+            try? modelContext.save()
+        }
     }
 }
 
@@ -141,6 +143,8 @@ struct StatusFilterButton: View {
                 .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                 .cornerRadius(8)
         }
+        .accessibilityLabel("\(title)フィルター")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -212,6 +216,7 @@ struct OwnedItemRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }
 

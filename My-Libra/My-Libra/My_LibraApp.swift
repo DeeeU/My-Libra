@@ -27,7 +27,7 @@ struct My_LibraApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LaunchScreenView()
                 .onAppear {
                     initializePresetCategories()
                 }
