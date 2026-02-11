@@ -9,31 +9,78 @@ import XCTest
 
 final class My_LibraUITests: XCTestCase {
 
+    var app: XCUIApplication!
+
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["--uitesting"]
+        app.launch()
 
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        // ロード画面の完了を待つ
+        let tabBar = app.tabBars.firstMatch
+        let exists = tabBar.waitForExistence(timeout: 5)
+        XCTAssertTrue(exists, "TabBarが表示されるまで待機")
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        app = nil
     }
+
+    // MARK: - Tab Navigation Tests
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+    func testTabNavigation() throws {
+        let tabBar = app.tabBars.firstMatch
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // 買い物リストタブ
+        tabBar.buttons["買い物リスト"].tap()
+        XCTAssertTrue(app.navigationBars["買い物リスト"].waitForExistence(timeout: 2))
+
+        // 保有品タブ
+        tabBar.buttons["保有品"].tap()
+        XCTAssertTrue(app.navigationBars["保有品"].waitForExistence(timeout: 2))
+
+        // 統計タブ
+        tabBar.buttons["統計"].tap()
+        XCTAssertTrue(app.navigationBars["統計"].waitForExistence(timeout: 2))
+
+        // 設定タブ
+        tabBar.buttons["設定"].tap()
+        XCTAssertTrue(app.navigationBars["設定"].waitForExistence(timeout: 2))
     }
+
+    // MARK: - Wishlist Tests
+
+    @MainActor
+    func testWishlistAddItem() throws {
+        let tabBar = app.tabBars.firstMatch
+        tabBar.buttons["買い物リスト"].tap()
+
+        // 追加ボタンをタップ
+        app.navigationBars.buttons.matching(identifier: "plus").firstMatch.tap()
+
+        // フォームが表示されることを確認
+        XCTAssertTrue(app.navigationBars["買い物リストに追加"].waitForExistence(timeout: 2))
+    }
+
+    // MARK: - Settings Tests
+
+    @MainActor
+    func testSettingsScreen() throws {
+        let tabBar = app.tabBars.firstMatch
+        tabBar.buttons["設定"].tap()
+
+        // 設定画面の要素確認
+        XCTAssertTrue(app.staticTexts["カテゴリー"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["データ管理"].exists)
+        XCTAssertTrue(app.staticTexts["アプリ情報"].exists)
+    }
+
+    // MARK: - Launch Performance
 
     @MainActor
     func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }

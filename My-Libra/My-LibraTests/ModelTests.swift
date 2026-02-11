@@ -152,6 +152,43 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(item.profit, -2000)
     }
 
+    // MARK: - Edge Case Tests
+
+    func testItemProfitZero() {
+        let item = Item(
+            name: "トントン",
+            category: "カードゲーム",
+            purchasePrice: 1000,
+            purchaseDate: Date(),
+            condition: .new
+        )
+
+        item.markAsSold(salePrice: 1000, saleDate: Date())
+        XCTAssertEqual(item.profit, 0)
+    }
+
+    func testItemDefaultValues() {
+        let item = Item(
+            name: "デフォルト",
+            category: "その他",
+            purchasePrice: 0,
+            purchaseDate: Date(),
+            condition: .new
+        )
+
+        XCTAssertEqual(item.purchasePrice, 0)
+        XCTAssertEqual(item.status, .owned)
+        XCTAssertNil(item.imageData)
+        XCTAssertNil(item.memo)
+    }
+
+    func testWishlistItemPurchasedFlag() {
+        let item = WishlistItem(name: "テスト", category: "その他")
+        XCTAssertFalse(item.isPurchased)
+        item.isPurchased = true
+        XCTAssertTrue(item.isPurchased)
+    }
+
     // MARK: - Enum Tests
 
     func testItemConditionEnum() {

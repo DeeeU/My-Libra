@@ -11,8 +11,15 @@ import SwiftData
 @main
 struct My_LibraApp: App {
     var sharedModelContainer: ModelContainer = {
+        let isUITesting = CommandLine.arguments.contains("--uitesting")
         do {
-            // シンプルな初期化方法
+            if isUITesting {
+                let config = ModelConfiguration(isStoredInMemoryOnly: true)
+                return try ModelContainer(
+                    for: Category.self, WishlistItem.self, Item.self,
+                    configurations: config
+                )
+            }
             return try ModelContainer(
                 for: Category.self,
                 WishlistItem.self,
