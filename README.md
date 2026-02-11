@@ -28,6 +28,7 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
 - 📷 **写真管理**: 商品写真を保存
 - 🏷️ **カテゴリー管理**: プリセット + カスタムカテゴリー
 - 📤 **データエクスポート**: CSV形式で出力
+- ⚖️ **ロード画面**: 天秤アニメーション付き起動画面
 
 ---
 
@@ -68,8 +69,25 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
   - カテゴリ別支出円グラフ (Swift Charts SectorMark)
   - 月次購入額棒グラフ (BarMark)
   - 月次損益折れ線グラフ (LineMark + AreaMark)
-- 🔄 Phase 6: 設定機能 (次のフェーズ)
-- ⏳ リリース準備
+- ✅ Phase 6: 設定機能完了
+  - カテゴリー管理 (追加/編集/削除/アイコン選択)
+  - CSVデータエクスポート
+  - データ全削除
+  - アプリ情報表示
+- ✅ Phase 7: ViewModel実装完了
+  - WishlistViewModel / ItemViewModel / StatisticsViewModel
+  - @Observable + ビジネスロジック分離
+- ✅ Phase 8: UI/UX改善完了
+  - 天秤アニメーション付きロード画面
+  - トースト通知 (成功/エラー/情報)
+  - アクセシビリティ対応 (VoiceOver)
+  - withAnimationによるリスト操作アニメーション
+- ✅ Phase 9: テスト強化完了
+  - 52テスト全成功
+  - ViewModel / Extension / CSVテスト
+- ✅ Phase 10: リリース準備完了
+  - プライバシーポリシー / App Storeメタデータ
+  - バージョン 1.0.0
 
 ### フェーズ2: クラウド版 (予定)
 - ⏳ AWS統合
@@ -137,12 +155,19 @@ My-Libra/
 │   └── Item.swift
 ├── Views/                           # SwiftUI Views
 │   ├── ContentView.swift
+│   ├── LaunchScreen/                # ロード画面
+│   ├── Components/                  # 共通コンポーネント
 │   ├── Wishlist/                    # 買い物リスト
 │   ├── OwnedItems/                  # 保有品
 │   ├── Statistics/                  # 統計
 │   └── Settings/                    # 設定
-├── ViewModels/                      # ビジネスロジック
+├── ViewModels/                      # ビジネスロジック (@Observable)
+│   ├── WishlistViewModel.swift
+│   ├── ItemViewModel.swift
+│   └── StatisticsViewModel.swift
 └── Utilities/                       # ユーティリティ
+    ├── Extensions.swift
+    └── CSVExportService.swift
 ```
 
 ---
@@ -397,14 +422,15 @@ open My-Libra.xcodeproj
 - [x] Phase 1-2: データモデル・アプリ基盤
 - [x] Phase 3-4: 買い物リスト・保有品管理
 - [x] Phase 5: 統計機能
-- [ ] Phase 6: 設定機能
-- [ ] TestFlightベータ配信
-- [ ] App Store公開
+- [x] Phase 6: 設定機能
 
 ### 2026 Q1
-- [ ] ユーザーフィードバック収集
-- [ ] UI/UX改善
-- [ ] AWS統合設計
+- [x] Phase 7: ViewModel実装
+- [x] Phase 8: UI/UX改善・ロード画面
+- [x] Phase 9: テスト強化 (52テスト)
+- [x] Phase 10: リリース準備
+- [ ] TestFlightベータ配信
+- [ ] App Store公開
 
 ### 2026 Q2
 - [ ] フェーズ2実装(AWS統合)
