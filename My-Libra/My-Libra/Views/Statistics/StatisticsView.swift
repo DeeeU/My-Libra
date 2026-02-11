@@ -20,7 +20,6 @@ enum StatsPeriod: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// フィルター開始日を返す（nilは全期間）
     var startDate: Date? {
         let calendar = Calendar.current
         let now = Date()
@@ -59,37 +58,33 @@ struct MonthlyData: Identifiable {
 // MARK: - StatisticsView
 
 struct StatisticsView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query private var allItems: [Item]
-    @State private var selectedPeriod: StatsPeriod = .all
+    @State private var viewModel = StatisticsViewModel()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // 期間フィルター
                     periodPicker
 
-                    // サマリーカード
                     summarySection
 
-                    // カテゴリ別支出（円グラフ）
-                    if !categoryData.isEmpty {
-                        categoryPieChartSection
+                    let catData = viewModel.categoryData(from: allItems)
+                    if !catData.isEmpty {
+                        categoryPieChartSection(catData)
                     }
 
-                    // 月次購入額（棒グラフ）
-                    if !monthlyData.isEmpty {
-                        monthlyPurchaseChartSection
+                    let monthly = viewModel.monthlyData(from: allItems)
+                    if !monthly.isEmpty {
+                        monthlyPurchaseChartSection(monthly)
                     }
 
-                    // 月次損益（折れ線グラフ）
-                    if !monthlyDataWithSales.isEmpty {
-                        monthlyProfitChartSection
+                    let monthlyWithSales = viewModel.monthlyDataWithSales(from: allItems)
+                    if !monthlyWithSales.isEmpty {
+                        monthlyProfitChartSection(monthlyWithSales)
                     }
 
-                    // データなしの場合
-                    if filteredItems.isEmpty {
+                    if viewModel.filteredItems(from: allItems).isEmpty {
                         emptyStateView
                     }
                 }
@@ -108,16 +103,16 @@ struct StatisticsView: View {
                 ForEach(StatsPeriod.allCases) { period in
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedPeriod = period
+                            viewModel.selectedPeriod = period
                         }
                     } label: {
                         Text(period.rawValue)
                             .font(.subheadline)
-                            .fontWeight(selectedPeriod == period ? .semibold : .regular)
+                            .fontWeight(viewModel.selectedPeriod == period ? .semibold : .regular)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(selectedPeriod == period ? Color.accentColor : Color(.systemGray5))
-                            .foregroundStyle(selectedPeriod == period ? .white : .primary)
+                            .background(viewModel.selectedPeriod == period ? Color.accentColor : Color(.systemGray5))
+                            .foregroundStyle(viewModel.selectedPeriod == period ? .white : .primary)
                             .clipShape(Capsule())
                     }
                 }
@@ -131,16 +126,21 @@ struct StatisticsView: View {
 
     private var summarySection: some View {
         VStack(spacing: 12) {
+            let totalPurchase = viewModel.totalPurchaseAmount(from: allItems)
+            let totalSale = viewModel.totalSaleAmount(from: allItems)
+            let profit = viewModel.totalProfit(from: allItems)
+            let ownedCount = viewModel.ownedItemsCount(from: allItems)
+
             HStack(spacing: 12) {
                 SummaryCard(
                     title: "総購入額",
-                    value: totalPurchaseAmount.toCurrencyString(),
+                    value: totalPurchase.toCurrencyString(),
                     icon: "cart.fill",
                     color: .blue
                 )
                 SummaryCard(
                     title: "総売却額",
-                    value: totalSaleAmount.toCurrencyString(),
+                    value: totalSale.toCurrencyString(),
                     icon: "yensign.circle.fill",
                     color: .green
                 )
@@ -148,13 +148,13 @@ struct StatisticsView: View {
             HStack(spacing: 12) {
                 SummaryCard(
                     title: "純損益",
-                    value: totalProfit.toSignedCurrencyString(),
+                    value: profit.toSignedCurrencyString(),
                     icon: "chart.line.uptrend.xyaxis",
-                    color: totalProfit >= 0 ? .green : .red
+                    color: profit >= 0 ? .green : .red
                 )
                 SummaryCard(
                     title: "保有品数",
-                    value: "\(ownedItemsCount)個",
+                    value: "\(ownedCount)個",
                     icon: "shippingbox.fill",
                     color: .orange
                 )
@@ -165,7 +165,7 @@ struct StatisticsView: View {
 
     // MARK: - Category Pie Chart
 
-    private var categoryPieChartSection: some View {
+    private func categoryPieChartSection(_ categoryData: [CategorySpending]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("カテゴリ別支出")
                 .sectionHeaderStyle()
@@ -187,7 +187,6 @@ struct StatisticsView: View {
             .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
             .padding(.horizontal)
 
-            // カテゴリ内訳リスト
             VStack(spacing: 8) {
                 ForEach(categoryData) { item in
                     HStack {
@@ -197,7 +196,7 @@ struct StatisticsView: View {
                         Text(item.amount.toCurrencyString())
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        Text(categoryPercentage(item.amount))
+                        Text(viewModel.categoryPercentage(item.amount, from: allItems))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(width: 45, alignment: .trailing)
@@ -214,7 +213,7 @@ struct StatisticsView: View {
 
     // MARK: - Monthly Purchase Chart
 
-    private var monthlyPurchaseChartSection: some View {
+    private func monthlyPurchaseChartSection(_ monthlyData: [MonthlyData]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("月次購入額")
                 .sectionHeaderStyle()
@@ -232,7 +231,7 @@ struct StatisticsView: View {
                     AxisGridLine()
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
-                            Text(abbreviatedCurrency(v))
+                            Text(viewModel.abbreviatedCurrency(v))
                                 .font(.caption2)
                         }
                     }
@@ -249,7 +248,7 @@ struct StatisticsView: View {
 
     // MARK: - Monthly Profit/Loss Chart
 
-    private var monthlyProfitChartSection: some View {
+    private func monthlyProfitChartSection(_ monthlyDataWithSales: [MonthlyData]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("月次損益")
                 .sectionHeaderStyle()
@@ -285,7 +284,7 @@ struct StatisticsView: View {
                     AxisGridLine()
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
-                            Text(abbreviatedCurrency(v))
+                            Text(viewModel.abbreviatedCurrency(v))
                                 .font(.caption2)
                         }
                     }
@@ -315,108 +314,6 @@ struct StatisticsView: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 60)
-    }
-
-    // MARK: - Computed Properties
-
-    private var filteredItems: [Item] {
-        guard let startDate = selectedPeriod.startDate else {
-            return allItems
-        }
-        return allItems.filter { $0.purchaseDate >= startDate }
-    }
-
-    private var totalPurchaseAmount: Double {
-        filteredItems.reduce(0) { $0 + $1.purchasePrice }
-    }
-
-    private var totalSaleAmount: Double {
-        filteredItems.compactMap { $0.salePrice }.reduce(0, +)
-    }
-
-    private var totalProfit: Double {
-        filteredItems.compactMap { $0.profit }.reduce(0, +)
-    }
-
-    private var ownedItemsCount: Int {
-        filteredItems.filter { $0.status == .owned }.count
-    }
-
-    private var categoryData: [CategorySpending] {
-        let grouped = Dictionary(grouping: filteredItems) { $0.category }
-        return grouped.map { CategorySpending(category: $0.key, amount: $0.value.reduce(0) { $0 + $1.purchasePrice }) }
-            .sorted { $0.amount > $1.amount }
-    }
-
-    private var monthlyData: [MonthlyData] {
-        buildMonthlyData(from: filteredItems)
-    }
-
-    private var monthlyDataWithSales: [MonthlyData] {
-        monthlyData.filter { data in
-            data.profitLoss != 0 || filteredItems.contains { item in
-                guard let saleDate = item.saleDate else { return false }
-                return Calendar.current.isDate(saleDate, equalTo: data.month, toGranularity: .month)
-            }
-        }
-    }
-
-    // MARK: - Helper Methods
-
-    private func buildMonthlyData(from items: [Item]) -> [MonthlyData] {
-        let calendar = Calendar.current
-        guard let earliest = items.map({ $0.purchaseDate }).min() else { return [] }
-
-        let startMonth = earliest.startOfMonth
-        let endMonth = Date().startOfMonth
-
-        var result: [MonthlyData] = []
-        var current = startMonth
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M月"
-
-        while current <= endMonth {
-            let monthItems = items.filter {
-                calendar.isDate($0.purchaseDate, equalTo: current, toGranularity: .month)
-            }
-            let purchaseTotal = monthItems.reduce(0) { $0 + $1.purchasePrice }
-
-            let soldItems = items.filter { item in
-                guard let saleDate = item.saleDate else { return false }
-                return calendar.isDate(saleDate, equalTo: current, toGranularity: .month)
-            }
-            let profitTotal = soldItems.compactMap { $0.profit }.reduce(0, +)
-
-            result.append(MonthlyData(
-                month: current,
-                label: formatter.string(from: current),
-                purchaseAmount: purchaseTotal,
-                profitLoss: profitTotal
-            ))
-
-            guard let next = calendar.date(byAdding: .month, value: 1, to: current) else { break }
-            current = next
-        }
-
-        return result
-    }
-
-    private func categoryPercentage(_ amount: Double) -> String {
-        let total = categoryData.reduce(0) { $0 + $1.amount }
-        guard total > 0 else { return "0%" }
-        let pct = (amount / total) * 100
-        return String(format: "%.0f%%", pct)
-    }
-
-    private func abbreviatedCurrency(_ value: Double) -> String {
-        let absValue = abs(value)
-        let sign = value < 0 ? "-" : ""
-        if absValue >= 10000 {
-            return "\(sign)¥\(String(format: "%.0f", absValue / 10000))万"
-        }
-        return "\(sign)¥\(String(format: "%.0f", absValue))"
     }
 }
 

@@ -13,19 +13,7 @@ struct OwnedItemsView: View {
     @Query(sort: \Item.purchaseDate, order: .reverse) private var allItems: [Item]
     @Query(sort: \Category.sortOrder) private var categories: [Category]
 
-    @State private var searchText = ""
-    @State private var selectedCategory: String = "すべて"
-    @State private var selectedStatus: ItemStatus? = nil
-    @State private var sortOption: SortOption = .dateDesc
-    @State private var showingSortMenu = false
-
-    enum SortOption: String, CaseIterable {
-        case dateDesc = "購入日（新しい順）"
-        case dateAsc = "購入日（古い順）"
-        case priceDesc = "価格（高い順）"
-        case priceAsc = "価格（安い順）"
-        case name = "名前順"
-    }
+    @State private var viewModel = ItemViewModel()
 
     var body: some View {
         NavigationStack {
@@ -36,18 +24,18 @@ struct OwnedItemsView: View {
                         HStack(spacing: 12) {
                             FilterChip(
                                 title: "すべて",
-                                isSelected: selectedCategory == "すべて"
+                                isSelected: viewModel.selectedCategory == "すべて"
                             ) {
-                                selectedCategory = "すべて"
+                                viewModel.selectedCategory = "すべて"
                             }
 
                             ForEach(categories) { category in
                                 FilterChip(
                                     title: category.name,
                                     icon: category.iconName,
-                                    isSelected: selectedCategory == category.name
+                                    isSelected: viewModel.selectedCategory == category.name
                                 ) {
-                                    selectedCategory = category.name
+                                    viewModel.selectedCategory = category.name
                                 }
                             }
                         }
@@ -59,14 +47,14 @@ struct OwnedItemsView: View {
 
                 // ステータスフィルター
                 HStack(spacing: 8) {
-                    StatusFilterButton(title: "全て", isSelected: selectedStatus == nil) {
-                        selectedStatus = nil
+                    StatusFilterButton(title: "全て", isSelected: viewModel.selectedStatus == nil) {
+                        viewModel.selectedStatus = nil
                     }
-                    StatusFilterButton(title: "保有中", isSelected: selectedStatus == .owned) {
-                        selectedStatus = .owned
+                    StatusFilterButton(title: "保有中", isSelected: viewModel.selectedStatus == .owned) {
+                        viewModel.selectedStatus = .owned
                     }
-                    StatusFilterButton(title: "売却済み", isSelected: selectedStatus == .sold) {
-                        selectedStatus = .sold
+                    StatusFilterButton(title: "売却済み", isSelected: viewModel.selectedStatus == .sold) {
+                        viewModel.selectedStatus = .sold
                     }
                     Spacer()
                 }
@@ -74,15 +62,16 @@ struct OwnedItemsView: View {
                 .padding(.vertical, 4)
 
                 // リスト表示
-                if filteredItems.isEmpty {
+                let filtered = viewModel.filteredItems(from: allItems)
+                if filtered.isEmpty {
                     ContentUnavailableView(
-                        searchText.isEmpty ? "アイテムがありません" : "該当するアイテムがありません",
-                        systemImage: searchText.isEmpty ? "shippingbox" : "magnifyingglass",
-                        description: Text(searchText.isEmpty ? "買い物リストから商品を購入済みにすると、ここに表示されます" : "検索条件を変更してください")
+                        viewModel.searchText.isEmpty ? "アイテムがありません" : "該当するアイテムがありません",
+                        systemImage: viewModel.searchText.isEmpty ? "shippingbox" : "magnifyingglass",
+                        description: Text(viewModel.searchText.isEmpty ? "買い物リストから商品を購入済みにすると、ここに表示されます" : "検索条件を変更してください")
                     )
                 } else {
                     List {
-                        ForEach(filteredItems) { item in
+                        ForEach(filtered) { item in
                             NavigationLink(value: item) {
                                 OwnedItemRow(item: item)
                             }
@@ -99,17 +88,17 @@ struct OwnedItemsView: View {
                 }
             }
             .navigationTitle("保有品")
-            .searchable(text: $searchText, prompt: "商品名で検索")
+            .searchable(text: $viewModel.searchText, prompt: "商品名で検索")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         ForEach(SortOption.allCases, id: \.self) { option in
                             Button {
-                                sortOption = option
+                                viewModel.sortOption = option
                             } label: {
                                 HStack {
                                     Text(option.rawValue)
-                                    if sortOption == option {
+                                    if viewModel.sortOption == option {
                                         Image(systemName: "checkmark")
                                     }
                                 }
@@ -123,42 +112,6 @@ struct OwnedItemsView: View {
             .navigationDestination(for: Item.self) { item in
                 ItemDetailView(item: item)
             }
-        }
-    }
-
-    // MARK: - Computed Properties
-
-    private var filteredItems: [Item] {
-        let filtered = allItems.filter { item in
-            // ステータスフィルター
-            if let status = selectedStatus, item.status != status {
-                return false
-            }
-
-            // カテゴリーフィルター
-            let categoryMatch = selectedCategory == "すべて" || item.category == selectedCategory
-
-            // 検索フィルター
-            let searchMatch = searchText.isEmpty || item.name.localizedCaseInsensitiveContains(searchText)
-
-            return categoryMatch && searchMatch
-        }
-
-        return sorted(filtered)
-    }
-
-    private func sorted(_ items: [Item]) -> [Item] {
-        switch sortOption {
-        case .dateDesc:
-            return items.sorted { $0.purchaseDate > $1.purchaseDate }
-        case .dateAsc:
-            return items.sorted { $0.purchaseDate < $1.purchaseDate }
-        case .priceDesc:
-            return items.sorted { $0.purchasePrice > $1.purchasePrice }
-        case .priceAsc:
-            return items.sorted { $0.purchasePrice < $1.purchasePrice }
-        case .name:
-            return items.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
         }
     }
 
