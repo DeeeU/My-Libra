@@ -57,7 +57,7 @@ actor ImageSyncService {
 
         while compressed.count > maxBytes && quality > 0.1 {
             quality -= 0.1
-            compressed = image.jpegData(compressionQuality: quality) ?? data
+            compressed = image.jpegData(compressionQuality: quality) ?? compressed
         }
 
         // サイズ超過の場合はリサイズ

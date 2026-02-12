@@ -219,10 +219,11 @@ final class ModelTests: XCTestCase {
     }
 
     func testSyncStatusEnum() {
-        XCTAssertEqual(SyncStatus.local.rawValue, "ローカルのみ")
-        XCTAssertEqual(SyncStatus.synced.rawValue, "同期済み")
-        XCTAssertEqual(SyncStatus.pendingUpload.rawValue, "アップロード待ち")
-        XCTAssertEqual(SyncStatus.pendingDelete.rawValue, "削除待ち")
+        XCTAssertEqual(SyncStatus.local.rawValue, "local")
+        XCTAssertEqual(SyncStatus.synced.rawValue, "synced")
+        XCTAssertEqual(SyncStatus.pendingUpload.rawValue, "pending_upload")
+        XCTAssertEqual(SyncStatus.pendingDelete.rawValue, "pending_delete")
+        XCTAssertEqual(SyncStatus.local.displayName, "ローカルのみ")
         XCTAssertEqual(SyncStatus.allCases.count, 4)
     }
 

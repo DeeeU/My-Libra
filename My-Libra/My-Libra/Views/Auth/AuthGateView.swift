@@ -13,7 +13,7 @@ struct AuthGateView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var supabase = SupabaseManager.shared
     @State private var syncCoordinator = SyncCoordinator()
-    @State private var isSkipped = false
+    @AppStorage("authSkipped") private var isSkipped = false
 
     var body: some View {
         Group {

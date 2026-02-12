@@ -16,8 +16,8 @@ struct RegisterView: View {
             TextField("メールアドレス", text: $viewModel.email)
                 .textContentType(.emailAddress)
                 .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .inputFieldStyle()
 
             // Password

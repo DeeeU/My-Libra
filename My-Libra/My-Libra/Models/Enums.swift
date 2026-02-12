@@ -33,8 +33,17 @@ enum ItemStatus: String, Codable, CaseIterable {
 
 /// 同期ステータス
 enum SyncStatus: String, Codable, CaseIterable {
-    case local = "ローカルのみ"
-    case synced = "同期済み"
-    case pendingUpload = "アップロード待ち"
-    case pendingDelete = "削除待ち"
+    case local = "local"
+    case synced = "synced"
+    case pendingUpload = "pending_upload"
+    case pendingDelete = "pending_delete"
+
+    var displayName: String {
+        switch self {
+        case .local: "ローカルのみ"
+        case .synced: "同期済み"
+        case .pendingUpload: "アップロード待ち"
+        case .pendingDelete: "削除待ち"
+        }
+    }
 }
