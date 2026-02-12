@@ -182,6 +182,70 @@ final class ModelTests: XCTestCase {
         XCTAssertNil(item.memo)
     }
 
+    // MARK: - Sync Field Tests
+
+    func testItemSyncFieldDefaults() {
+        let item = Item(
+            name: "同期テスト",
+            category: "その他",
+            purchasePrice: 1000,
+            purchaseDate: Date(),
+            condition: .new
+        )
+
+        XCTAssertNil(item.userId)
+        XCTAssertEqual(item.syncStatus, .local)
+        XCTAssertNotNil(item.localUpdatedAt)
+        XCTAssertNil(item.remoteUpdatedAt)
+        XCTAssertNil(item.imageUrl)
+    }
+
+    func testWishlistItemSyncFieldDefaults() {
+        let item = WishlistItem(name: "同期テスト", category: "その他")
+
+        XCTAssertNil(item.userId)
+        XCTAssertEqual(item.syncStatus, .local)
+        XCTAssertNotNil(item.localUpdatedAt)
+        XCTAssertNil(item.remoteUpdatedAt)
+    }
+
+    func testCategorySyncFieldDefaults() {
+        let category = Category(name: "同期テスト", iconName: "star")
+
+        XCTAssertNil(category.userId)
+        XCTAssertEqual(category.syncStatus, .local)
+        XCTAssertNotNil(category.localUpdatedAt)
+        XCTAssertNil(category.remoteUpdatedAt)
+    }
+
+    func testSyncStatusEnum() {
+        XCTAssertEqual(SyncStatus.local.rawValue, "ローカルのみ")
+        XCTAssertEqual(SyncStatus.synced.rawValue, "同期済み")
+        XCTAssertEqual(SyncStatus.pendingUpload.rawValue, "アップロード待ち")
+        XCTAssertEqual(SyncStatus.pendingDelete.rawValue, "削除待ち")
+        XCTAssertEqual(SyncStatus.allCases.count, 4)
+    }
+
+    func testItemSyncStatusUpdate() {
+        let item = Item(
+            name: "ステータス変更テスト",
+            category: "その他",
+            purchasePrice: 500,
+            purchaseDate: Date(),
+            condition: .used
+        )
+
+        item.syncStatus = .pendingUpload
+        XCTAssertEqual(item.syncStatus, .pendingUpload)
+
+        item.syncStatus = .synced
+        item.userId = "test-user-id"
+        item.remoteUpdatedAt = Date()
+        XCTAssertEqual(item.syncStatus, .synced)
+        XCTAssertEqual(item.userId, "test-user-id")
+        XCTAssertNotNil(item.remoteUpdatedAt)
+    }
+
     func testWishlistItemPurchasedFlag() {
         let item = WishlistItem(name: "テスト", category: "その他")
         XCTAssertFalse(item.isPurchased)
