@@ -19,6 +19,12 @@ final class WishlistItem {
     var createdAt: Date
     var isPurchased: Bool
 
+    // 同期用フィールド
+    var userId: String?
+    var syncStatus: SyncStatus
+    var localUpdatedAt: Date
+    var remoteUpdatedAt: Date?
+
     init(name: String, category: String, estimatedPrice: Double? = nil, memo: String? = nil) {
         self.id = UUID()
         self.name = name
@@ -27,5 +33,9 @@ final class WishlistItem {
         self.memo = memo
         self.createdAt = Date()
         self.isPurchased = false
+        self.userId = nil
+        self.syncStatus = .local
+        self.localUpdatedAt = Date()
+        self.remoteUpdatedAt = nil
     }
 }

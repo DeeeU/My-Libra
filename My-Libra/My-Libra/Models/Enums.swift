@@ -30,3 +30,11 @@ enum ItemStatus: String, Codable, CaseIterable {
         return self.rawValue
     }
 }
+
+/// 同期ステータス
+enum SyncStatus: String, Codable, CaseIterable {
+    case local = "ローカルのみ"
+    case synced = "同期済み"
+    case pendingUpload = "アップロード待ち"
+    case pendingDelete = "削除待ち"
+}
