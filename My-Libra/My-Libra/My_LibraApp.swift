@@ -11,6 +11,8 @@ import Combine
 
 @main
 struct My_LibraApp: App {
+    @State private var supabaseManager = SupabaseManager.shared
+
     var sharedModelContainer: ModelContainer = {
         let isUITesting = CommandLine.arguments.contains("--uitesting")
         do {
