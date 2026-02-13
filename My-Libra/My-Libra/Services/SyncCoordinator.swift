@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 @Observable
 final class SyncCoordinator {
     private let syncService = SyncService()
