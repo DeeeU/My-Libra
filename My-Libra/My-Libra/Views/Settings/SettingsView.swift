@@ -10,6 +10,7 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(PlanManager.self) private var planManager
     @Query private var categories: [Category]
     @Query private var items: [Item]
     @Query private var wishlistItems: [WishlistItem]
@@ -20,10 +21,32 @@ struct SettingsView: View {
     @State private var showingDeleteComplete = false
     @State private var showingExportError = false
     @State private var showingDeleteError = false
+    @State private var showingPaywall = false
 
     var body: some View {
         NavigationStack {
             List {
+                // サブスクリプションセクション
+                Section {
+                    NavigationLink {
+                        SubscriptionManagementView()
+                    } label: {
+                        HStack {
+                            Label("サブスクリプション", systemImage: "crown.fill")
+                            Spacer()
+                            Text(planManager.isPro ? "Pro" : "Free")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(planManager.isPro ? Color.yellow.opacity(0.2) : Color(.systemGray5))
+                                .foregroundStyle(planManager.isPro ? .orange : .secondary)
+                                .cornerRadius(4)
+                        }
+                    }
+                } header: {
+                    Text("プラン")
+                }
+
                 // カテゴリー管理セクション
                 Section {
                     NavigationLink {
@@ -40,9 +63,21 @@ struct SettingsView: View {
                 // データ管理セクション
                 Section {
                     Button {
-                        exportData()
+                        if planManager.canAccess(.csvExport) {
+                            exportData()
+                        } else {
+                            showingPaywall = true
+                        }
                     } label: {
-                        Label("データをエクスポート", systemImage: "square.and.arrow.up")
+                        HStack {
+                            Label("データをエクスポート", systemImage: "square.and.arrow.up")
+                            if !planManager.canAccess(.csvExport) {
+                                Spacer()
+                                Image(systemName: "lock.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     .disabled(items.isEmpty && wishlistItems.isEmpty)
 
@@ -115,6 +150,9 @@ struct SettingsView: View {
                     ShareSheet(activityItems: [url])
                 }
             }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
         }
     }
 
@@ -185,4 +223,5 @@ struct ShareSheet: UIViewControllerRepresentable {
 #Preview {
     SettingsView()
         .modelContainer(for: [Category.self, Item.self, WishlistItem.self])
+        .environment(PlanManager.shared)
 }

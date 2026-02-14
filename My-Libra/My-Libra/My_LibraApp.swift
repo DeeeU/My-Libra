@@ -35,8 +35,12 @@ struct My_LibraApp: App {
     var body: some Scene {
         WindowGroup {
             LaunchScreenView()
+                .environment(PlanManager.shared)
                 .onAppear {
                     initializePresetCategories()
+                }
+                .task {
+                    await PlanManager.shared.initialize()
                 }
         }
         .modelContainer(sharedModelContainer)

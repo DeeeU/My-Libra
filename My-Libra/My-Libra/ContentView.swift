@@ -47,4 +47,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .modelContainer(for: [Category.self, WishlistItem.self, Item.self])
+        .environment(PlanManager.shared)
 }

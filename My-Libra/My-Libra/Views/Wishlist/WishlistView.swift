@@ -10,8 +10,10 @@ import SwiftData
 
 struct WishlistView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(PlanManager.self) private var planManager
     @Query(sort: \WishlistItem.createdAt, order: .reverse) private var allWishlistItems: [WishlistItem]
     @Query private var categories: [Category]
+    @Query private var allItems: [Item]
 
     @State private var viewModel = WishlistViewModel()
     @State private var showingAddSheet = false
@@ -19,6 +21,7 @@ struct WishlistView: View {
     @State private var showToast = false
     @State private var toastMessage = ""
     @State private var toastStyle: ToastStyle = .success
+    @State private var showingPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -71,7 +74,11 @@ struct WishlistView: View {
                                 }
                                 .swipeActions(edge: .leading, allowsFullSwipe: false) {
                                     Button {
-                                        itemToPurchase = item
+                                        if planManager.canAddItem(currentCount: allItems.count) {
+                                            itemToPurchase = item
+                                        } else {
+                                            showingPaywall = true
+                                        }
                                     } label: {
                                         Label("購入", systemImage: "cart.fill.badge.plus")
                                     }
@@ -100,6 +107,9 @@ struct WishlistView: View {
                 PurchaseDetailView(wishlistItem: item)
             }
             .toast(isPresented: $showToast, message: toastMessage, style: toastStyle)
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
         }
     }
 
@@ -194,5 +204,6 @@ struct FilterChip: View {
 
 #Preview {
     WishlistView()
-        .modelContainer(for: [WishlistItem.self, Category.self])
+        .modelContainer(for: [WishlistItem.self, Category.self, Item.self])
+        .environment(PlanManager.shared)
 }

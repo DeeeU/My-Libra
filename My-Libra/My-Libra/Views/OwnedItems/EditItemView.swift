@@ -12,6 +12,7 @@ import PhotosUI
 struct EditItemView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(PlanManager.self) private var planManager
     @Query(sort: \Category.sortOrder) private var categories: [Category]
 
     @Bindable var item: Item
@@ -83,36 +84,57 @@ struct EditItemView: View {
                     Text("購入情報")
                 }
 
-                Section {
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        HStack {
-                            if let imageData, let uiImage = UIImage(data: imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 60, height: 60)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                Text("写真を変更")
-                                    .foregroundStyle(Color.accentColor)
-                            } else {
-                                Image(systemName: "photo.badge.plus")
-                                    .font(.title2)
-                                    .foregroundStyle(.secondary)
-                                Text("写真を追加")
-                                    .foregroundStyle(Color.accentColor)
+                if planManager.canAccess(.photos) {
+                    Section {
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            HStack {
+                                if let imageData, let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    Text("写真を変更")
+                                        .foregroundStyle(Color.accentColor)
+                                } else {
+                                    Image(systemName: "photo.badge.plus")
+                                        .font(.title2)
+                                        .foregroundStyle(.secondary)
+                                    Text("写真を追加")
+                                        .foregroundStyle(Color.accentColor)
+                                }
                             }
                         }
-                    }
 
-                    if imageData != nil {
-                        Button(role: .destructive) {
-                            imageData = nil
-                        } label: {
-                            Label("写真を削除", systemImage: "trash")
+                        if imageData != nil {
+                            Button(role: .destructive) {
+                                imageData = nil
+                            } label: {
+                                Label("写真を削除", systemImage: "trash")
+                            }
+                        }
+                    } header: {
+                        Text("写真")
+                    }
+                } else if imageData != nil {
+                    // 既存写真は表示のみ（ダウングレード対応）
+                    Section {
+                        if let imageData, let uiImage = UIImage(data: imageData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    } header: {
+                        HStack {
+                            Text("写真")
+                            Spacer()
+                            Image(systemName: "lock.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                } header: {
-                    Text("写真")
                 }
 
                 Section {
@@ -170,4 +192,5 @@ struct EditItemView: View {
         condition: .new
     ))
     .modelContainer(for: [Item.self, Category.self], inMemory: true)
+    .environment(PlanManager.shared)
 }

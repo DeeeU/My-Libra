@@ -12,6 +12,7 @@ import PhotosUI
 struct PurchaseDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(PlanManager.self) private var planManager
 
     let wishlistItem: WishlistItem
 
@@ -81,31 +82,33 @@ struct PurchaseDetailView: View {
                     Text("購入情報")
                 }
 
-                Section {
-                    if let imageData = imageData, let uiImage = UIImage(data: imageData) {
-                        HStack {
-                            Spacer()
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 200)
-                                .cornerRadius(8)
-                            Spacer()
-                        }
+                if planManager.canAccess(.photos) {
+                    Section {
+                        if let imageData = imageData, let uiImage = UIImage(data: imageData) {
+                            HStack {
+                                Spacer()
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: 200)
+                                    .cornerRadius(8)
+                                Spacer()
+                            }
 
-                        Button("写真を削除", role: .destructive) {
-                            self.imageData = nil
-                            selectedPhoto = nil
+                            Button("写真を削除", role: .destructive) {
+                                self.imageData = nil
+                                selectedPhoto = nil
+                            }
+                        } else {
+                            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                                Label("写真を追加", systemImage: "photo.on.rectangle.angled")
+                            }
                         }
-                    } else {
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                            Label("写真を追加", systemImage: "photo.on.rectangle.angled")
-                        }
+                    } header: {
+                        Text("写真")
+                    } footer: {
+                        Text("商品の写真を追加できます（任意）")
                     }
-                } header: {
-                    Text("写真")
-                } footer: {
-                    Text("商品の写真を追加できます（任意）")
                 }
 
                 Section {
@@ -215,4 +218,5 @@ struct PurchaseDetailView: View {
 
     return PurchaseDetailView(wishlistItem: sampleItem)
         .modelContainer(container)
+        .environment(PlanManager.shared)
 }

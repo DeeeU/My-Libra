@@ -10,6 +10,7 @@ import SwiftData
 
 struct OwnedItemsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(PlanManager.self) private var planManager
     @Query(sort: \Item.purchaseDate, order: .reverse) private var allItems: [Item]
     @Query(sort: \Category.sortOrder) private var categories: [Category]
 
@@ -73,7 +74,7 @@ struct OwnedItemsView: View {
                     List {
                         ForEach(filtered) { item in
                             NavigationLink(value: item) {
-                                OwnedItemRow(item: item)
+                                OwnedItemRow(item: item, showProfit: planManager.canAccess(.profitDisplay))
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
@@ -152,6 +153,7 @@ struct StatusFilterButton: View {
 
 struct OwnedItemRow: View {
     let item: Item
+    var showProfit: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -202,7 +204,7 @@ struct OwnedItemRow: View {
                         .foregroundStyle(.tertiary)
                 }
 
-                if item.status == .sold, let profit = item.profit {
+                if showProfit, item.status == .sold, let profit = item.profit {
                     HStack {
                         Text("損益:")
                             .font(.caption2)
@@ -240,4 +242,5 @@ struct StatusBadge: View {
 #Preview {
     OwnedItemsView()
         .modelContainer(for: [Item.self, Category.self])
+        .environment(PlanManager.shared)
 }

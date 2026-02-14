@@ -10,6 +10,7 @@ import SwiftData
 
 struct CategoryManagementView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(PlanManager.self) private var planManager
     @Query(sort: \Category.sortOrder) private var categories: [Category]
 
     @State private var showingAddSheet = false
@@ -17,6 +18,7 @@ struct CategoryManagementView: View {
     @State private var categoryToDelete: Category?
     @State private var showingDeleteAlert = false
     @State private var itemCountForDelete = 0
+    @State private var showingPaywall = false
 
     var body: some View {
         List {
@@ -31,24 +33,45 @@ struct CategoryManagementView: View {
 
             // カスタムカテゴリー
             Section {
-                ForEach(customCategories) { category in
-                    categoryRow(category)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                prepareDelete(category)
-                            } label: {
-                                Label("削除", systemImage: "trash")
+                if planManager.canAccess(.customCategories) {
+                    ForEach(customCategories) { category in
+                        categoryRow(category)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    prepareDelete(category)
+                                } label: {
+                                    Label("削除", systemImage: "trash")
+                                }
                             }
+                            .onTapGesture {
+                                categoryToEdit = category
+                            }
+                    }
+                    .onMove(perform: moveCustomCategories)
+                } else {
+                    // Free: 既存カスタムカテゴリは表示のみ
+                    ForEach(customCategories) { category in
+                        categoryRow(category)
+                    }
+                    if customCategories.isEmpty {
+                        UpgradePromptView(feature: .customCategories) {
+                            showingPaywall = true
                         }
-                        .onTapGesture {
-                            categoryToEdit = category
-                        }
+                        .listRowInsets(EdgeInsets())
+                    }
                 }
-                .onMove(perform: moveCustomCategories)
             } header: {
-                Text("カスタム")
+                HStack {
+                    Text("カスタム")
+                    if !planManager.canAccess(.customCategories) {
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             } footer: {
-                if customCategories.isEmpty {
+                if planManager.canAccess(.customCategories) && customCategories.isEmpty {
                     Text("右上の＋ボタンでカテゴリーを追加できます")
                 }
             }
@@ -57,13 +80,19 @@ struct CategoryManagementView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showingAddSheet = true
+                    if planManager.canAccess(.customCategories) {
+                        showingAddSheet = true
+                    } else {
+                        showingPaywall = true
+                    }
                 } label: {
                     Image(systemName: "plus")
                 }
             }
-            ToolbarItem(placement: .primaryAction) {
-                EditButton()
+            if planManager.canAccess(.customCategories) {
+                ToolbarItem(placement: .primaryAction) {
+                    EditButton()
+                }
             }
         }
         .sheet(isPresented: $showingAddSheet) {
@@ -71,6 +100,9 @@ struct CategoryManagementView: View {
         }
         .sheet(item: $categoryToEdit) { category in
             AddEditCategoryView(editingCategory: category)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
         }
         .alert("カテゴリーを削除", isPresented: $showingDeleteAlert) {
             Button("削除する", role: .destructive) {
@@ -203,4 +235,5 @@ struct CategoryManagementView: View {
         CategoryManagementView()
     }
     .modelContainer(for: [Category.self, Item.self, WishlistItem.self])
+    .environment(PlanManager.shared)
 }

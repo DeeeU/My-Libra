@@ -58,8 +58,10 @@ struct MonthlyData: Identifiable {
 // MARK: - StatisticsView
 
 struct StatisticsView: View {
+    @Environment(PlanManager.self) private var planManager
     @Query private var allItems: [Item]
     @State private var viewModel = StatisticsViewModel()
+    @State private var showingPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -92,7 +94,48 @@ struct StatisticsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("統計")
+            .overlay {
+                if !planManager.canAccess(.statistics) {
+                    statisticsLockOverlay
+                }
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
         }
+    }
+
+    // MARK: - Lock Overlay
+
+    private var statisticsLockOverlay: some View {
+        ZStack {
+            Color(.systemBackground).opacity(0.85)
+            VStack(spacing: 16) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.secondary)
+                Text("統計機能はPro限定です")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                Text("Proプランで詳細な統計分析をご利用いただけます")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("Pro にアップグレード")
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .cornerRadius(10)
+                }
+            }
+            .padding()
+        }
+        .ignoresSafeArea()
     }
 
     // MARK: - Period Picker
@@ -354,4 +397,5 @@ struct SummaryCard: View {
 #Preview {
     StatisticsView()
         .modelContainer(for: [Item.self, Category.self])
+        .environment(PlanManager.shared)
 }
