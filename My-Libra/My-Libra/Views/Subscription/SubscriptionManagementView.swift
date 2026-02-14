@@ -10,6 +10,9 @@ import SwiftUI
 struct SubscriptionManagementView: View {
     @Environment(PlanManager.self) private var planManager
     @State private var showingPaywall = false
+    @State private var isRestoring = false
+    @State private var showingRestoreResult = false
+    @State private var restoreSucceeded = false
 
     var body: some View {
         List {
@@ -48,9 +51,18 @@ struct SubscriptionManagementView: View {
             }
 
             Section {
-                Button("購入を復元") {
-                    Task { await planManager.restorePurchases() }
+                Button {
+                    Task { await performRestore() }
+                } label: {
+                    HStack {
+                        Text("購入を復元")
+                        Spacer()
+                        if isRestoring {
+                            ProgressView()
+                        }
+                    }
                 }
+                .disabled(isRestoring)
 
                 if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
                     Link(destination: url) {
@@ -70,6 +82,13 @@ struct SubscriptionManagementView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
+        .alert(restoreSucceeded ? "復元完了" : "復元結果", isPresented: $showingRestoreResult) {
+            Button("OK") {}
+        } message: {
+            Text(restoreSucceeded
+                 ? "Proプランが復元されました。"
+                 : "復元できるサブスクリプションが見つかりませんでした。")
+        }
     }
 
     private var currentPlanName: String {
@@ -82,6 +101,14 @@ struct SubscriptionManagementView: View {
             return "Pro"
         }
         return "Free"
+    }
+
+    private func performRestore() async {
+        isRestoring = true
+        defer { isRestoring = false }
+
+        restoreSucceeded = await planManager.restorePurchases()
+        showingRestoreResult = true
     }
 }
 

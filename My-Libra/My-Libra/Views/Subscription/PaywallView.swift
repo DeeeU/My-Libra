@@ -14,7 +14,11 @@ struct PaywallView: View {
 
     @State private var selectedPlan: PlanType = .yearly
     @State private var isPurchasing = false
+    @State private var isRestoring = false
     @State private var errorMessage: String?
+    @State private var showingPendingAlert = false
+    @State private var showingRestoreResult = false
+    @State private var restoreSucceeded = false
 
     enum PlanType {
         case monthly, yearly
@@ -47,6 +51,20 @@ struct PaywallView: View {
                 Button("OK") { errorMessage = nil }
             } message: {
                 Text(errorMessage ?? "")
+            }
+            .alert("承認待ち", isPresented: $showingPendingAlert) {
+                Button("OK") {}
+            } message: {
+                Text("購入の承認待ちです。保護者の承認後に自動的にProが有効になります。")
+            }
+            .alert(restoreSucceeded ? "復元完了" : "復元結果", isPresented: $showingRestoreResult) {
+                Button("OK") {
+                    if restoreSucceeded { dismiss() }
+                }
+            } message: {
+                Text(restoreSucceeded
+                     ? "Proプランが復元されました。"
+                     : "復元できるサブスクリプションが見つかりませんでした。")
             }
         }
     }
@@ -133,25 +151,44 @@ struct PaywallView: View {
 
     private var planSelectionSection: some View {
         VStack(spacing: 12) {
-            // 年額プラン
-            planCard(
-                type: .yearly,
-                title: "年額プラン",
-                price: planManager.storeKit.yearlyProduct?.displayPrice ?? "¥1,500",
-                period: "/年",
-                badge: "17%お得",
-                isSelected: selectedPlan == .yearly
-            )
+            if planManager.storeKit.productsLoadError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("商品情報を取得できませんでした")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
 
-            // 月額プラン
-            planCard(
-                type: .monthly,
-                title: "月額プラン",
-                price: planManager.storeKit.monthlyProduct?.displayPrice ?? "¥150",
-                period: "/月",
-                badge: nil,
-                isSelected: selectedPlan == .monthly
-            )
+                Button("再読み込み") {
+                    Task { await planManager.storeKit.loadProducts() }
+                }
+                .font(.subheadline)
+            } else {
+                // 年額プラン
+                planCard(
+                    type: .yearly,
+                    title: "年額プラン",
+                    price: planManager.storeKit.yearlyProduct?.displayPrice ?? "¥1,500",
+                    period: "/年",
+                    badge: "17%お得",
+                    isSelected: selectedPlan == .yearly
+                )
+
+                // 月額プラン
+                planCard(
+                    type: .monthly,
+                    title: "月額プラン",
+                    price: planManager.storeKit.monthlyProduct?.displayPrice ?? "¥150",
+                    period: "/月",
+                    badge: nil,
+                    isSelected: selectedPlan == .monthly
+                )
+            }
         }
     }
 
@@ -226,24 +263,32 @@ struct PaywallView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.accentColor)
+            .background(purchaseButtonDisabled ? Color.gray : Color.accentColor)
             .foregroundStyle(.white)
             .cornerRadius(12)
         }
-        .disabled(isPurchasing)
+        .disabled(purchaseButtonDisabled)
+    }
+
+    private var purchaseButtonDisabled: Bool {
+        isPurchasing || planManager.storeKit.products.isEmpty
     }
 
     // MARK: - Restore & Terms
 
     private var restoreAndTerms: some View {
         VStack(spacing: 12) {
-            Button("購入を復元") {
-                Task {
-                    await planManager.restorePurchases()
-                    if planManager.isPro { dismiss() }
+            Button {
+                Task { await performRestore() }
+            } label: {
+                if isRestoring {
+                    ProgressView()
+                } else {
+                    Text("購入を復元")
                 }
             }
             .font(.subheadline)
+            .disabled(isRestoring)
 
             VStack(spacing: 4) {
                 Text("サブスクリプションは自動更新されます。")
@@ -288,11 +333,26 @@ struct PaywallView: View {
         }
 
         do {
-            try await planManager.purchase(product)
-            if planManager.isPro { dismiss() }
+            let result = try await planManager.purchase(product)
+            switch result {
+            case .success:
+                dismiss()
+            case .pending:
+                showingPendingAlert = true
+            case .userCancelled:
+                break
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func performRestore() async {
+        isRestoring = true
+        defer { isRestoring = false }
+
+        restoreSucceeded = await planManager.restorePurchases()
+        showingRestoreResult = true
     }
 }
 

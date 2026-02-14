@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 @main
 struct My_LibraApp: App {
@@ -41,6 +42,9 @@ struct My_LibraApp: App {
                 }
                 .task {
                     await PlanManager.shared.initialize()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                    Task { await PlanManager.shared.refreshProStatus() }
                 }
         }
         .modelContainer(sharedModelContainer)

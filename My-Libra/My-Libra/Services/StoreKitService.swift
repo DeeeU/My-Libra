@@ -7,6 +7,12 @@
 
 import StoreKit
 
+enum PurchaseResult {
+    case success(Transaction)
+    case pending
+    case userCancelled
+}
+
 @MainActor
 @Observable
 final class StoreKitService {
@@ -18,6 +24,7 @@ final class StoreKitService {
 
     private(set) var products: [Product] = []
     private(set) var purchasedProductIDs: Set<String> = []
+    private(set) var productsLoadError: Bool = false
     private var transactionListener: Task<Void, Never>?
 
     var monthlyProduct: Product? {
@@ -44,14 +51,16 @@ final class StoreKitService {
         do {
             products = try await Product.products(for: Self.productIDs)
                 .sorted { $0.price < $1.price }
+            productsLoadError = false
         } catch {
             print("⚠️ 商品の読み込みエラー: \(error)")
+            productsLoadError = true
         }
     }
 
     // MARK: - Purchase
 
-    func purchase(_ product: Product) async throws -> Transaction? {
+    func purchase(_ product: Product) async throws -> PurchaseResult {
         let result = try await product.purchase()
 
         switch result {
@@ -59,16 +68,16 @@ final class StoreKitService {
             let transaction = try checkVerified(verification)
             await transaction.finish()
             await updateCurrentEntitlements()
-            return transaction
+            return .success(transaction)
 
         case .userCancelled:
-            return nil
+            return .userCancelled
 
         case .pending:
-            return nil
+            return .pending
 
         @unknown default:
-            return nil
+            return .userCancelled
         }
     }
 

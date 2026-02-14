@@ -18,7 +18,11 @@ final class PlanManager {
     let storeKit = StoreKitService()
 
     var isPro: Bool {
-        storeKit.hasActiveSubscription || cachedProStatus
+        if storeKit.hasActiveSubscription {
+            return true
+        }
+        // オフライン時のフォールバック: キャッシュが有効期限内ならtrue
+        return isCacheValid
     }
 
     // MARK: - Feature Access
@@ -33,16 +37,21 @@ final class PlanManager {
 
     // MARK: - Purchase
 
-    func purchase(_ product: Product) async throws {
-        let transaction = try await storeKit.purchase(product)
-        if transaction != nil {
+    /// Returns the purchase result for UI feedback
+    func purchase(_ product: Product) async throws -> PurchaseResult {
+        let result = try await storeKit.purchase(product)
+        if case .success = result {
             saveCachedProStatus(true)
         }
+        return result
     }
 
-    func restorePurchases() async {
+    /// Returns true if purchases were restored successfully
+    func restorePurchases() async -> Bool {
         await storeKit.restorePurchases()
-        saveCachedProStatus(storeKit.hasActiveSubscription)
+        let isActive = storeKit.hasActiveSubscription
+        saveCachedProStatus(isActive)
+        return isActive
     }
 
     // MARK: - Initialization
@@ -50,26 +59,37 @@ final class PlanManager {
     func initialize() async {
         await storeKit.loadProducts()
         await storeKit.updateCurrentEntitlements()
-        // Always update cache to reflect current StoreKit state (handles expiry)
         saveCachedProStatus(storeKit.hasActiveSubscription)
     }
 
-    /// Call after any entitlement change to keep cache in sync
+    /// Call on foreground return to refresh entitlements and keep cache in sync
     func refreshProStatus() async {
         await storeKit.updateCurrentEntitlements()
         saveCachedProStatus(storeKit.hasActiveSubscription)
     }
 
-    // MARK: - UserDefaults Cache
+    // MARK: - UserDefaults Cache with Expiry
 
     private static let cachedProKey = "cachedProStatus"
+    private static let cachedProTimestampKey = "cachedProTimestamp"
+    /// Cache is valid for 7 days — after that, StoreKit must confirm
+    private static let cacheValidityInterval: TimeInterval = 7 * 24 * 60 * 60
 
-    private var cachedProStatus: Bool {
-        UserDefaults.standard.bool(forKey: Self.cachedProKey)
+    private var isCacheValid: Bool {
+        guard UserDefaults.standard.bool(forKey: Self.cachedProKey) else { return false }
+        let timestamp = UserDefaults.standard.double(forKey: Self.cachedProTimestampKey)
+        guard timestamp > 0 else { return false }
+        let cacheDate = Date(timeIntervalSince1970: timestamp)
+        return Date().timeIntervalSince(cacheDate) < Self.cacheValidityInterval
     }
 
     private func saveCachedProStatus(_ value: Bool) {
         UserDefaults.standard.set(value, forKey: Self.cachedProKey)
+        if value {
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.cachedProTimestampKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.cachedProTimestampKey)
+        }
     }
 
     private init() {}
