@@ -63,11 +63,19 @@ struct StatisticsView: View {
     @State private var viewModel = StatisticsViewModel()
     @State private var showingPaywall = false
 
+    private var isMasked: Bool { !planManager.canAccess(.statistics) }
+    private static let maskedValue = "***"
+    private static let maskedColor = Color.gray.opacity(0.4)
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     periodPicker
+
+                    if isMasked {
+                        lockBanner
+                    }
 
                     summarySection
 
@@ -94,48 +102,46 @@ struct StatisticsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("統計")
-            .overlay {
-                if !planManager.canAccess(.statistics) {
-                    statisticsLockOverlay
-                }
-            }
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
         }
     }
 
-    // MARK: - Lock Overlay
+    // MARK: - Lock Banner
 
-    private var statisticsLockOverlay: some View {
-        ZStack {
-            Color(.systemBackground).opacity(0.95)
-            VStack(spacing: 16) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.secondary)
+    private var lockBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.fill")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
                 Text("統計機能はPro限定です")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                Text("Proプランで詳細な統計分析をご利用いただけます")
                     .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                Button {
-                    showingPaywall = true
-                } label: {
-                    Text("Pro にアップグレード")
-                        .fontWeight(.semibold)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(Color.accentColor)
-                        .foregroundStyle(.white)
-                        .cornerRadius(10)
-                }
+                    .fontWeight(.medium)
+                Text("数値とグラフの詳細はProプランでご覧いただけます")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding()
+            Spacer()
+            Button {
+                showingPaywall = true
+            } label: {
+                Text("解除")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .cornerRadius(8)
+            }
         }
-        .ignoresSafeArea()
+        .padding()
+        .background(.background)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+        .padding(.horizontal)
     }
 
     // MARK: - Period Picker
@@ -177,29 +183,29 @@ struct StatisticsView: View {
             HStack(spacing: 12) {
                 SummaryCard(
                     title: "総購入額",
-                    value: totalPurchase.toCurrencyString(),
+                    value: isMasked ? Self.maskedValue : totalPurchase.toCurrencyString(),
                     icon: "cart.fill",
-                    color: .blue
+                    color: isMasked ? Self.maskedColor : .blue
                 )
                 SummaryCard(
                     title: "総売却額",
-                    value: totalSale.toCurrencyString(),
+                    value: isMasked ? Self.maskedValue : totalSale.toCurrencyString(),
                     icon: "yensign.circle.fill",
-                    color: .green
+                    color: isMasked ? Self.maskedColor : .green
                 )
             }
             HStack(spacing: 12) {
                 SummaryCard(
                     title: "純損益",
-                    value: profit.toSignedCurrencyString(),
+                    value: isMasked ? Self.maskedValue : profit.toSignedCurrencyString(),
                     icon: "chart.line.uptrend.xyaxis",
-                    color: profit >= 0 ? .green : .red
+                    color: isMasked ? Self.maskedColor : (profit >= 0 ? .green : .red)
                 )
                 SummaryCard(
                     title: "保有品数",
-                    value: "\(ownedCount)個",
+                    value: isMasked ? Self.maskedValue : "\(ownedCount)個",
                     icon: "shippingbox.fill",
-                    color: .orange
+                    color: isMasked ? Self.maskedColor : .orange
                 )
             }
         }
@@ -213,16 +219,31 @@ struct StatisticsView: View {
             Text("カテゴリ別支出")
                 .sectionHeaderStyle()
 
-            Chart(categoryData) { item in
-                SectorMark(
-                    angle: .value("金額", item.amount),
-                    innerRadius: .ratio(0.5),
-                    angularInset: 1.5
-                )
-                .foregroundStyle(by: .value("カテゴリ", item.category))
-                .cornerRadius(4)
+            Group {
+                if isMasked {
+                    Chart(categoryData) { item in
+                        SectorMark(
+                            angle: .value("金額", item.amount),
+                            innerRadius: .ratio(0.5),
+                            angularInset: 1.5
+                        )
+                        .foregroundStyle(Self.maskedColor)
+                        .cornerRadius(4)
+                    }
+                    .chartLegend(.hidden)
+                } else {
+                    Chart(categoryData) { item in
+                        SectorMark(
+                            angle: .value("金額", item.amount),
+                            innerRadius: .ratio(0.5),
+                            angularInset: 1.5
+                        )
+                        .foregroundStyle(by: .value("カテゴリ", item.category))
+                        .cornerRadius(4)
+                    }
+                    .chartLegend(position: .bottom, alignment: .center, spacing: 12)
+                }
             }
-            .chartLegend(position: .bottom, alignment: .center, spacing: 12)
             .frame(height: 240)
             .padding()
             .background(.background)
@@ -236,10 +257,10 @@ struct StatisticsView: View {
                         Text(item.category)
                             .font(.subheadline)
                         Spacer()
-                        Text(item.amount.toCurrencyString())
+                        Text(isMasked ? Self.maskedValue : item.amount.toCurrencyString())
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        Text(viewModel.categoryPercentage(item.amount, from: allItems))
+                        Text(isMasked ? "--%" : viewModel.categoryPercentage(item.amount, from: allItems))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(width: 45, alignment: .trailing)
@@ -266,14 +287,17 @@ struct StatisticsView: View {
                     x: .value("月", data.label),
                     y: .value("購入額", data.purchaseAmount)
                 )
-                .foregroundStyle(Color.blue.gradient)
+                .foregroundStyle(isMasked ? AnyShapeStyle(Self.maskedColor) : AnyShapeStyle(Color.blue.gradient))
                 .cornerRadius(4)
             }
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine()
                     AxisValueLabel {
-                        if let v = value.as(Double.self) {
+                        if isMasked {
+                            Text("***")
+                                .font(.caption2)
+                        } else if let v = value.as(Double.self) {
                             Text(viewModel.abbreviatedCurrency(v))
                                 .font(.caption2)
                         }
@@ -301,7 +325,7 @@ struct StatisticsView: View {
                     x: .value("月", data.label),
                     y: .value("損益", data.profitLoss)
                 )
-                .foregroundStyle(Color.orange)
+                .foregroundStyle(isMasked ? AnyShapeStyle(Self.maskedColor) : AnyShapeStyle(Color.orange))
                 .interpolationMethod(.catmullRom)
                 .symbol(Circle())
 
@@ -310,7 +334,13 @@ struct StatisticsView: View {
                     y: .value("損益", data.profitLoss)
                 )
                 .foregroundStyle(
-                    LinearGradient(
+                    isMasked
+                    ? LinearGradient(
+                        colors: [Self.maskedColor.opacity(0.3), Self.maskedColor.opacity(0.05)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    : LinearGradient(
                         colors: [Color.orange.opacity(0.3), Color.orange.opacity(0.05)],
                         startPoint: .top,
                         endPoint: .bottom
@@ -326,7 +356,10 @@ struct StatisticsView: View {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine()
                     AxisValueLabel {
-                        if let v = value.as(Double.self) {
+                        if isMasked {
+                            Text("***")
+                                .font(.caption2)
+                        } else if let v = value.as(Double.self) {
                             Text(viewModel.abbreviatedCurrency(v))
                                 .font(.caption2)
                         }
