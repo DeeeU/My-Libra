@@ -89,10 +89,22 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
   - プライバシーポリシー / App Storeメタデータ
   - バージョン 1.0.0
 
-### フェーズ2: クラウド版 (予定)
-- ⏳ AWS統合
-- ⏳ 複数デバイス同期
-- ⏳ バックアップ機能
+### フェーズ2: クラウド同期 + 認証 (実装済み)
+- ✅ Phase 11: Supabase統合
+  - Supabase Auth（メール/パスワード認証）
+  - Apple Sign In対応
+  - RLS (Row Level Security) によるデータ保護
+  - アイテム・買い物リストのクラウド同期
+  - 写真のクラウドストレージ (Supabase Storage)
+  - オフライン対応（ローカル優先 + バックグラウンド同期）
+  - 「ログインせずに使う」スキップフロー
+
+### フェーズ3: サブスクリプション (設計完了・実装待ち)
+- ⏳ Phase 12: Free/Pro プラン導入
+  - StoreKit 2 Auto-Renewable Subscription
+  - 月額 ¥150 / 年額 ¥1,500（17%割引）
+  - 7日間無料トライアル
+  - 機能制限: アイテム25件上限、写真・統計・CSV・同期をPro限定
 
 ---
 
@@ -106,13 +118,16 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
 - **グラフ**: Charts
 - **最小OS**: iOS 17.0
 
-### フェーズ2 (クラウド版)
-- **バックエンド**: AWS Amplify
-- **認証**: Amazon Cognito
-- **API**: AWS AppSync (GraphQL)
-- **データベース**: Amazon DynamoDB
-- **ストレージ**: Amazon S3
-- **サーバーレス**: AWS Lambda
+### フェーズ2 (クラウド同期)
+- **バックエンド**: Supabase (PostgreSQL)
+- **認証**: Supabase Auth + Apple Sign In
+- **API**: Supabase REST API (PostgREST)
+- **ストレージ**: Supabase Storage (写真)
+- **セキュリティ**: Row Level Security (RLS)
+
+### フェーズ3 (サブスクリプション)
+- **課金**: StoreKit 2 (Auto-Renewable Subscription)
+- **プラン管理**: PlanManager (@Observable singleton)
 
 ---
 
@@ -356,12 +371,17 @@ open My-Libra.xcodeproj
 - データエクスポート
 
 ### v2.0.0 (フェーズ2)
-- AWS統合
+- Supabase統合
 - クラウド同期
 - 複数デバイス対応
-- バックアップ・復元
+- Apple Sign In
 
-### v3.0.0 (将来)
+### v3.0.0 (フェーズ3)
+- Free/Pro サブスクリプション
+- StoreKit 2 課金機能
+- 機能ゲーティング
+
+### v4.0.0 (将来)
 - バーコードスキャン
 - OCR (レシート読み取り)
 - Web版
@@ -432,15 +452,15 @@ open My-Libra.xcodeproj
 - [ ] TestFlightベータ配信
 - [ ] App Store公開
 
-### 2026 Q2
-- [ ] フェーズ2実装(AWS統合)
-- [ ] 複数デバイス同期
-- [ ] v2.0.0リリース
+### 2026 Q1-Q2
+- [x] Phase 11: Supabase統合 (認証 + クラウド同期)
+- [ ] Phase 12: Free/Pro サブスクリプション
+- [ ] v2.0.0リリース (クラウド同期)
+- [ ] v3.0.0リリース (サブスクリプション)
 
 ### 2026 Q3以降
 - [ ] Web版開発
 - [ ] Android版開発
-- [ ] API公開
 
 ---
 
