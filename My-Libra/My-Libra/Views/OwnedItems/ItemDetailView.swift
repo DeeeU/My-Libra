@@ -11,6 +11,7 @@ import SwiftData
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(PlanManager.self) private var planManager
 
     @Bindable var item: Item
 
@@ -155,17 +156,35 @@ struct ItemDetailView: View {
                 Divider()
             }
             if let profit = item.profit {
-                HStack {
-                    Label("損益", systemImage: "chart.line.uptrend.xyaxis")
-                        .font(.subheadline)
+                if planManager.canAccess(.profitDisplay) {
+                    HStack {
+                        Label("損益", systemImage: "chart.line.uptrend.xyaxis")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(profit.toSignedCurrencyString())
+                            .font(.headline)
+                            .foregroundStyle(Color.profitLoss(for: profit))
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                } else {
+                    HStack {
+                        Label("損益", systemImage: "chart.line.uptrend.xyaxis")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                            Text("Pro")
+                                .font(.caption)
+                        }
                         .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(profit.toSignedCurrencyString())
-                        .font(.headline)
-                        .foregroundStyle(Color.profitLoss(for: profit))
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
             }
         }
         .background(Color(.systemGray6))
@@ -228,4 +247,5 @@ struct InfoRow: View {
         ))
     }
     .modelContainer(for: Item.self, inMemory: true)
+    .environment(PlanManager.shared)
 }
