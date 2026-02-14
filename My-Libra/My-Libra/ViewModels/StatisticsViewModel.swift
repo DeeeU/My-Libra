@@ -9,7 +9,7 @@ import Foundation
 
 @Observable
 final class StatisticsViewModel {
-    var selectedPeriod: StatsPeriod = .all
+    var selectedPeriod: StatsPeriod = .thisMonth
 
     func filteredItems(from items: [Item]) -> [Item] {
         guard let startDate = selectedPeriod.startDate else {

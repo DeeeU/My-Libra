@@ -138,6 +138,19 @@
       ]
     }
   ],
+  "users" : [
+    {
+      "id" : "pro-test-user",
+      "givenName" : "Pro",
+      "familyName" : "Tester",
+      "subscriptions" : [
+        {
+          "productID" : "com.deeu.mylibra.pro.monthly",
+          "purchaseDate" : "2026-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ],
   "version" : {
     "major" : 4,
     "minor" : 0

@@ -109,7 +109,7 @@ struct StatisticsView: View {
 
     private var statisticsLockOverlay: some View {
         ZStack {
-            Color(.systemBackground).opacity(0.85)
+            Color(.systemBackground).opacity(0.95)
             VStack(spacing: 16) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 40))
