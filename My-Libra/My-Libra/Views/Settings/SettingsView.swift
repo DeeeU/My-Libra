@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var showingExportError = false
     @State private var showingDeleteError = false
     @State private var showingPaywall = false
+    @State private var showingAdminDashboard = false
 
     var body: some View {
         NavigationStack {
@@ -100,6 +101,12 @@ struct SettingsView: View {
                         Spacer()
                         Text(appVersion)
                             .foregroundStyle(.secondary)
+                    }
+                    .onLongPressGesture(minimumDuration: 3) {
+                        showingAdminDashboard = true
+                    }
+                    .navigationDestination(isPresented: $showingAdminDashboard) {
+                        AdminDashboardView()
                     }
 
                     HStack {
