@@ -88,6 +88,11 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
 - ✅ Phase 10: リリース準備完了
   - プライバシーポリシー / App Storeメタデータ
   - バージョン 1.0.0
+- ✅ 管理ダッシュボード機能追加
+  - PIN認証ゲート (AdminAuthManager / AdminAuthView)
+  - ダッシュボード画面 (AdminDashboardView / AdminDashboardViewModel)
+  - 売上・カテゴリ分析・在庫管理ビュー
+  - テスト45件追加 (AdminAuthManagerTests 16件 + AdminDashboardViewModelTests 29件)
 
 ### フェーズ2: クラウド同期 + 認証 (実装済み)
 - ✅ Phase 11: Supabase統合
@@ -175,11 +180,14 @@ My-Libra/
 │   ├── Wishlist/                    # 買い物リスト
 │   ├── OwnedItems/                  # 保有品
 │   ├── Statistics/                  # 統計
-│   └── Settings/                    # 設定
+│   └── Settings/                    # 設定 + 管理ダッシュボード
 ├── ViewModels/                      # ビジネスロジック (@Observable)
 │   ├── WishlistViewModel.swift
 │   ├── ItemViewModel.swift
-│   └── StatisticsViewModel.swift
+│   ├── StatisticsViewModel.swift
+│   └── AdminDashboardViewModel.swift
+├── Services/                        # サービス層
+│   └── AdminAuthManager.swift
 └── Utilities/                       # ユーティリティ
     ├── Extensions.swift
     └── CSVExportService.swift

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **My-Libra** is an iOS application for managing hobby and collectible item purchases and sales. The app tracks purchases, sales, and calculates profits/losses with visualization features.
 
-**Current Status**: Phase 1-5完了。Phase 6（設定機能）が次のフェーズ。
+**Current Status**: Phase 1-11完了。管理ダッシュボード追加済み。Phase 12（サブスクリプション）が次のフェーズ。
 
 **Primary Language**: Japanese (documentation and UI)
 
@@ -69,7 +69,7 @@ User-customizable categories for items.
 - sortOrder: Int
 ```
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 My-Libra/
@@ -84,8 +84,11 @@ My-Libra/
 │   ├── Wishlist/                   # Wishlist screens
 │   ├── OwnedItems/                 # Owned items screens
 │   ├── Statistics/                 # Statistics/Charts screens
-│   └── Settings/                   # Settings screens
+│   └── Settings/                   # Settings + Admin Dashboard screens
 ├── ViewModels/                      # Business logic
+│   └── AdminDashboardViewModel.swift
+├── Services/                        # Service layer
+│   └── AdminAuthManager.swift      # PIN authentication
 └── Utilities/                       # Helper functions
 ```
 
@@ -228,18 +231,25 @@ When implementing features, ensure these scenarios work:
 
 ## Development Phases
 
-### Phase 1-5 (完了)
+### Phase 1-11 (完了)
 - Phase 1: データモデル (Enums, Category, WishlistItem, Item)
 - Phase 2: アプリ基盤 (SwiftData, TabView, Extensions)
 - Phase 3: 買い物リスト機能
 - Phase 4: 保有品管理機能
 - Phase 5: 統計機能 (Swift Charts)
+- Phase 6: 設定機能 (カテゴリー管理, データエクスポート, アプリ情報)
+- Phase 7: ViewModel実装
+- Phase 8: UI/UX改善 (ロード画面, トースト通知, アクセシビリティ)
+- Phase 9: テスト強化 (103テスト)
+- Phase 10: リリース準備
+- Phase 11: Supabase統合 (認証 + クラウド同期)
+- 管理ダッシュボード (PIN認証 + 売上・カテゴリ分析・在庫管理)
 
-### Phase 6 (次のフェーズ)
-設定機能 (カテゴリー管理, データエクスポート, アプリ情報)
+### Phase 12 (次のフェーズ)
+サブスクリプション (Free/Pro プラン, StoreKit 2)
 
-### フェーズ2 (将来)
-AWS統合, クラウド同期, 複数デバイス対応
+### 将来
+Web版, Android版, バーコードスキャン, OCR
 
 ## Notes for AI Development
 
