@@ -164,7 +164,7 @@ final class AdminDashboardViewModelTests: XCTestCase {
         ]
 
         let data = viewModel.categoryProfitAnalysis(from: items)
-        XCTAssertEqual(data.first?.roi, 50, accuracy: 0.1) // (500/1000)*100
+        XCTAssertEqual(data.first!.roi, 50, accuracy: 0.1) // (500/1000)*100
     }
 
     func testCategoryProfitAnalysisMultipleCategories() {
