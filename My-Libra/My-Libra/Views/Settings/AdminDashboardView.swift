@@ -609,7 +609,7 @@ struct AdminPINChangeView: View {
 
                 Image(systemName: "key.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
 
                 VStack(spacing: 8) {
                     Text(stepTitle)

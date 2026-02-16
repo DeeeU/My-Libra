@@ -31,7 +31,7 @@ struct AdminAuthView: View {
                 // アイコン
                 Image(systemName: isSetupMode ? "lock.badge.plus" : "lock.shield.fill")
                     .font(.system(size: 56))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
 
                 // タイトル
                 VStack(spacing: 8) {
