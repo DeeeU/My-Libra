@@ -11,6 +11,8 @@ import Combine
 
 @main
 struct My_LibraApp: App {
+    @State private var themeManager = ThemeManager.shared
+
     var sharedModelContainer: ModelContainer = {
         let isUITesting = CommandLine.arguments.contains("--uitesting")
         do {
@@ -36,6 +38,8 @@ struct My_LibraApp: App {
     var body: some Scene {
         WindowGroup {
             LaunchScreenView()
+                .environment(themeManager)
+                .preferredColorScheme(themeManager.colorScheme)
                 .environment(PlanManager.shared)
                 .onAppear {
                     initializePresetCategories()

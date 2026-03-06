@@ -11,6 +11,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(PlanManager.self) private var planManager
+    @Environment(ThemeManager.self) private var themeManager
     @Query private var categories: [Category]
     @Query private var items: [Item]
     @Query private var wishlistItems: [WishlistItem]
@@ -45,6 +46,30 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("プラン")
+                }
+
+                // テーマセクション
+                Section {
+                    ForEach(AppTheme.allCases, id: \.self) { theme in
+                        Button {
+                            themeManager.setTheme(theme)
+                        } label: {
+                            HStack {
+                                Label(theme.displayName, systemImage: theme.iconName)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if themeManager.currentTheme == theme {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.accentColor)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("テーマ")
+                } footer: {
+                    Text("「システム」はiOSの外観設定に自動で従います。")
                 }
 
                 // カテゴリー管理セクション
@@ -224,4 +249,5 @@ struct ShareSheet: UIViewControllerRepresentable {
     SettingsView()
         .modelContainer(for: [Category.self, Item.self, WishlistItem.self])
         .environment(PlanManager.shared)
+        .environment(ThemeManager.shared)
 }
