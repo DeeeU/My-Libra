@@ -11,6 +11,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(PlanManager.self) private var planManager
+    @Environment(UserProfileManager.self) private var profileManager
     @Query private var categories: [Category]
     @Query private var items: [Item]
     @Query private var wishlistItems: [WishlistItem]
@@ -26,6 +27,47 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // プロフィールセクション
+                Section {
+                    NavigationLink {
+                        ProfileView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            // アバター
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.blue.opacity(0.7), .purple.opacity(0.7)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 44, height: 44)
+                                Text(avatarInitial)
+                                    .font(.headline.bold())
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(profileManager.profile.isConfigured
+                                     ? profileManager.profile.username
+                                     : "プロフィールを設定")
+                                    .font(.body)
+                                    .foregroundStyle(profileManager.profile.isConfigured ? .primary : .secondary)
+                                Text(profileManager.profile.isConfigured
+                                     ? profileManager.profile.email.isEmpty ? "メールアドレス未設定" : profileManager.profile.email
+                                     : "タップして設定する")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("アカウント")
+                }
+
                 // サブスクリプションセクション
                 Section {
                     NavigationLink {
@@ -158,6 +200,11 @@ struct SettingsView: View {
 
     // MARK: - Computed Properties
 
+    private var avatarInitial: String {
+        let name = profileManager.profile.username.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "?" : String(name.prefix(1)).uppercased()
+    }
+
     private var customCategoryCount: Int {
         categories.filter { $0.isCustom }.count
     }
@@ -224,4 +271,5 @@ struct ShareSheet: UIViewControllerRepresentable {
     SettingsView()
         .modelContainer(for: [Category.self, Item.self, WishlistItem.self])
         .environment(PlanManager.shared)
+        .environment(UserProfileManager.shared)
 }

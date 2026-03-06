@@ -37,6 +37,7 @@ struct My_LibraApp: App {
         WindowGroup {
             LaunchScreenView()
                 .environment(PlanManager.shared)
+                .environment(UserProfileManager.shared)
                 .onAppear {
                     initializePresetCategories()
                 }
