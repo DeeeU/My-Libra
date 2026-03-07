@@ -23,6 +23,13 @@ final class Item {
     var salePrice: Double?
     var saleDate: Date?
 
+    // 同期用フィールド
+    var userId: String?
+    var syncStatus: SyncStatus
+    var localUpdatedAt: Date
+    var remoteUpdatedAt: Date?
+    var imageUrl: String?
+
     /// 損益（計算プロパティ）
     var profit: Double? {
         guard let salePrice = salePrice else { return nil }
@@ -49,6 +56,11 @@ final class Item {
         self.status = .owned
         self.salePrice = nil
         self.saleDate = nil
+        self.userId = nil
+        self.syncStatus = .local
+        self.localUpdatedAt = Date()
+        self.remoteUpdatedAt = nil
+        self.imageUrl = nil
     }
 
     /// 売却処理

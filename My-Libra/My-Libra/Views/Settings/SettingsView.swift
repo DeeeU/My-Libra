@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Auth
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -23,9 +24,40 @@ struct SettingsView: View {
     @State private var showingDeleteError = false
     @State private var showingPaywall = false
 
+    private let supabase = SupabaseManager.shared
+
     var body: some View {
         NavigationStack {
             List {
+                // アカウントセクション
+                Section {
+                    if supabase.isAuthenticated {
+                        NavigationLink {
+                            ProfileView()
+                        } label: {
+                            Label {
+                                VStack(alignment: .leading) {
+                                    Text(supabase.currentUser?.email ?? "ユーザー")
+                                    Text("ログイン中")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: "person.circle.fill")
+                            }
+                        }
+                    } else {
+                        Label {
+                            Text("未ログイン（ローカルモード）")
+                                .foregroundStyle(.secondary)
+                        } icon: {
+                            Image(systemName: "person.circle")
+                        }
+                    }
+                } header: {
+                    Text("アカウント")
+                }
+
                 // サブスクリプションセクション
                 Section {
                     NavigationLink {

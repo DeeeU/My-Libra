@@ -1,0 +1,17 @@
+-- seed.sql
+-- 開発用テストデータ
+
+-- テストユーザーは Supabase Studio の Authentication タブから作成してください。
+-- supabase start 後、http://localhost:54323 でアクセスできます。
+--
+-- テストユーザー作成後、以下のようにデータを投入できます:
+--
+-- INSERT INTO public.categories (user_id, name, icon_name, is_custom, sort_order)
+-- VALUES
+--   ('<user-uuid>', 'カードゲーム', 'rectangle.portrait.on.rectangle.portrait', false, 0),
+--   ('<user-uuid>', '靴・スニーカー', 'shoe', false, 1),
+--   ('<user-uuid>', 'フィギュア', 'figure.stand', false, 2),
+--   ('<user-uuid>', '本・漫画', 'book', false, 3),
+--   ('<user-uuid>', 'ゲーム', 'gamecontroller', false, 4),
+--   ('<user-uuid>', '電子機器', 'iphone', false, 5),
+--   ('<user-uuid>', 'その他', 'cube.box', false, 6);

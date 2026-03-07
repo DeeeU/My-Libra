@@ -16,7 +16,7 @@ struct LaunchScreenView: View {
 
     var body: some View {
         if showContent {
-            ContentView()
+            AuthGateView()
         } else {
             ZStack {
                 Color(.systemBackground)

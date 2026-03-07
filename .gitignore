@@ -64,3 +64,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Supabase
+supabase/.branches
+supabase/.temp
+supabase/.env

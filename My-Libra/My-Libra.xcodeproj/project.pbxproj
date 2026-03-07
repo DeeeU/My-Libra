@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CA2F534A2F3E23D000E5AE20 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CA0000012F0000000000001B /* Supabase */; };
+		CA2F534B2F3E23D000E5AE20 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = CA0000012F0000000000001C /* Auth */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CA9739DD2EA925080012B39B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA2F534B2F3E23D000E5AE20 /* Auth in Frameworks */,
+				CA2F534A2F3E23D000E5AE20 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +119,8 @@
 			);
 			name = "My-Libra";
 			packageProductDependencies = (
+				CA0000012F0000000000001B /* Supabase */,
+				CA0000012F0000000000001C /* Auth */,
 			);
 			productName = "My-Libra";
 			productReference = CA9739CD2EA925070012B39B /* My-Libra.app */;
@@ -195,6 +204,9 @@
 			);
 			mainGroup = CA9739C42EA925070012B39B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CA0000012F0000000000001A /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CA9739CE2EA925070012B39B /* Products */;
 			projectDirPath = "";
@@ -609,6 +621,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CA0000012F0000000000001A /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CA0000012F0000000000001B /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA0000012F0000000000001A /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		CA0000012F0000000000001C /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA0000012F0000000000001A /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CA9739C52EA925070012B39B /* Project object */;
 }

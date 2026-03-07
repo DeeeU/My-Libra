@@ -17,12 +17,22 @@ final class Category {
     var isCustom: Bool
     var sortOrder: Int
 
+    // 同期用フィールド
+    var userId: String?
+    var syncStatus: SyncStatus
+    var localUpdatedAt: Date
+    var remoteUpdatedAt: Date?
+
     init(name: String, iconName: String, isCustom: Bool = false, sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
         self.iconName = iconName
         self.isCustom = isCustom
         self.sortOrder = sortOrder
+        self.userId = nil
+        self.syncStatus = .local
+        self.localUpdatedAt = Date()
+        self.remoteUpdatedAt = nil
     }
 
     /// プリセットカテゴリーを生成
