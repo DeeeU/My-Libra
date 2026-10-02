@@ -6,29 +6,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **My-Libra** is an iOS application for managing hobby and collectible item purchases and sales. The app tracks purchases, sales, and calculates profits/losses with visualization features.
 
-**Current Status**: Phase 1-5完了。Phase 6（設定機能）が次のフェーズ。
+**Current Status**: Phase 1-6完了。サブスクリプション（Free/Pro）、Supabaseによるアカウント・クラウド同期も実装済み。現在はデザイン統一とApp Storeリリース準備のフェーズ（残タスクは `TODO.md` を参照）。
 
 **Primary Language**: Japanese (documentation and UI)
 
 ## Technology Stack
 
-### Phase 1 (Local Version - In Development)
+### App
 - **Language**: Swift 5.9+
 - **Framework**: SwiftUI
-- **Data Persistence**: SwiftData
+- **Data Persistence**: SwiftData（オフラインファースト。ローカルが一次ストア）
 - **Photo Handling**: PhotosUI
 - **Charts**: Swift Charts framework
+- **In-App Purchase**: StoreKit 2（Free / Pro プラン）
 - **Minimum iOS**: 17.0
 
-### Phase 2 (Cloud Version - Planned)
-- **Backend**: AWS Amplify
-- **Authentication**: Amazon Cognito
-- **API**: AWS AppSync (GraphQL)
-- **Database**: Amazon DynamoDB
-- **Storage**: Amazon S3
-- **Serverless**: AWS Lambda
+### Backend (Cloud Sync)
+- **Platform**: Supabase（`supabase-swift` SDK）
+- **Authentication**: Supabase Auth
+- **Database**: PostgreSQL + RLS（`supabase/migrations/`）
+- **Storage**: Supabase Storage（バケット `item-images`）
+- 接続先は `Services/Config.swift`。現在は環境変数未設定時にローカル開発環境（`http://127.0.0.1:54321`）を使う。本番環境は未構築。
+- 当初計画していたAWS構成（`AWS統合技術設計書.md`）は採用せず、Supabaseに置き換えた。
 
 ## Core Data Models
+
+全モデル共通で同期用フィールドを持つ:
+```swift
+- userId: String?            // Supabase user ID (nil = ローカルのみ)
+- syncStatus: SyncStatus     // local / synced / pendingUpload / pendingDelete
+- localUpdatedAt: Date
+- remoteUpdatedAt: Date?
+```
 
 ### WishlistItem (買い物リスト)
 Items the user wants to purchase in the future.
@@ -36,7 +45,7 @@ Items the user wants to purchase in the future.
 - id: UUID
 - name: String
 - category: String
-- estimatedPrice: Decimal?
+- estimatedPrice: Double?
 - memo: String?
 - createdAt: Date
 - isPurchased: Bool
@@ -48,15 +57,16 @@ Purchased items with tracking for sales and profit.
 - id: UUID
 - name: String
 - category: String
-- purchasePrice: Decimal
+- purchasePrice: Double
 - purchaseDate: Date
 - condition: ItemCondition (enum)
 - memo: String?
 - imageData: Data?
+- imageUrl: String?   // Supabase Storage のパス
 - status: ItemStatus (enum)
-- salePrice: Decimal?
+- salePrice: Double?
 - saleDate: Date?
-- profit: Decimal? // Computed property: salePrice - purchasePrice
+- profit: Double? // Computed property: salePrice - purchasePrice
 ```
 
 ### Category (カテゴリー)
@@ -69,24 +79,32 @@ User-customizable categories for items.
 - sortOrder: Int
 ```
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
-My-Libra/
-├── My_LibraApp.swift               # App entry point
-├── Models/                          # SwiftData models
-│   ├── Enums.swift                 # ItemCondition, ItemStatus, etc.
-│   ├── Category.swift
-│   ├── WishlistItem.swift
-│   └── Item.swift
-├── Views/                           # SwiftUI Views
-│   ├── ContentView.swift           # Main TabView
-│   ├── Wishlist/                   # Wishlist screens
-│   ├── OwnedItems/                 # Owned items screens
-│   ├── Statistics/                 # Statistics/Charts screens
-│   └── Settings/                   # Settings screens
-├── ViewModels/                      # Business logic
-└── Utilities/                       # Helper functions
+My-Libra/                            # リポジトリルート
+├── My-Libra/                        # Xcodeプロジェクト (xcodebuild はここで実行)
+│   ├── My-Libra.xcodeproj
+│   ├── My-Libra/
+│   │   ├── My_LibraApp.swift        # App entry point
+│   │   ├── ContentView.swift        # Main TabView
+│   │   ├── Models/                  # Enums (ItemCondition, ItemStatus, SyncStatus), Category, WishlistItem, Item, ProFeature
+│   │   ├── Views/
+│   │   │   ├── Wishlist/            # 買い物リスト
+│   │   │   ├── OwnedItems/          # 保有品（詳細・編集・売却）
+│   │   │   ├── Statistics/          # 統計
+│   │   │   ├── Settings/            # 設定・カテゴリー管理・SF Symbolピッカー
+│   │   │   ├── Subscription/        # Paywall・プラン管理・アップグレード誘導
+│   │   │   ├── Auth/                # ログイン・登録・プロフィール
+│   │   │   ├── LaunchScreen/        # 起動アニメーション（天秤）
+│   │   │   └── Components/          # 共通部品（Toast）
+│   │   ├── ViewModels/              # Wishlist / Item / Statistics / Auth
+│   │   ├── Services/                # Supabase・同期・StoreKit・PlanManager・Config
+│   │   └── Utilities/               # Extensions, CSVExportService
+│   ├── My-LibraTests/               # Unit tests
+│   └── My-LibraUITests/
+├── supabase/                        # DBマイグレーション・RLS・Storage設定
+└── docs/                            # 認証・同期・API・サブスク等の設計書
 ```
 
 ## Key Features
@@ -179,14 +197,14 @@ xcodebuild test -project My-Libra.xcodeproj -scheme My-Libra \
 - Configure ModelContainer in App entry point
 - Use `@Query` in views for reactive data binding
 
-### Decimal Type for Currency
-Use `Decimal` type (not `Double`) for all price-related properties to ensure precision in financial calculations.
+### Currency Type
+現状の実装では価格系プロパティは `Double` 型。当初方針は `Decimal` だったが、Phase 2以降 `Double` で実装されている。型を変更する場合はSwiftDataのマイグレーションとSupabaseスキーマへの影響を考慮すること。
 
 ### Date Handling
 Store dates as `Date` type in SwiftData. Format for display using `Date.FormatStyle` for proper Japanese localization.
 
 ### Photo Storage
-Store images as `Data?` type in SwiftData for Phase 1 (local storage). Migrate to S3 URLs in Phase 2.
+Images are stored as `Data?` in SwiftData (local), and uploaded to Supabase Storage (`imageUrl`) when cloud sync is enabled (`ImageSyncService`).
 
 ### Category System
 Implement preset categories (カードゲーム, 靴, フィギュア, 本・漫画, etc.) with ability for users to add custom categories.
@@ -221,31 +239,36 @@ When implementing features, ensure these scenarios work:
 
 ## Privacy & Data
 
-- Phase 1: All data stored locally using SwiftData
-- Photos stored on device
-- No external server communication
-- Phase 2: User-controlled cloud backup via AWS
+- 未ログイン時: すべてのデータはSwiftDataでローカル保存。外部通信なし
+- ログイン時: Supabaseと同期（RLSでユーザーごとにデータを分離）
 
 ## Development Phases
 
-### Phase 1-5 (完了)
+### 完了
 - Phase 1: データモデル (Enums, Category, WishlistItem, Item)
 - Phase 2: アプリ基盤 (SwiftData, TabView, Extensions)
 - Phase 3: 買い物リスト機能
 - Phase 4: 保有品管理機能
 - Phase 5: 統計機能 (Swift Charts)
+- Phase 6: 設定機能 (カテゴリー管理, CSVエクスポート, 全データ削除, アプリ情報)
+- サブスクリプション (StoreKit 2, Free/Pro, 統計のFree向けマスキング)
+- アカウント・クラウド同期 (Supabase Auth / DB / Storage, オフラインファースト同期)
 
-### Phase 6 (次のフェーズ)
-設定機能 (カテゴリー管理, データエクスポート, アプリ情報)
+### 次のフェーズ
+- デザイン統一（AccentColor設定、ハードコード色の置き換え等）
+- Supabase本番環境の構築と接続先切り替え
+- アクセシビリティ強化
+- App Storeリリース準備（署名、App Store Connect、プライバシーポリシー公開、TestFlight）
 
-### フェーズ2 (将来)
-AWS統合, クラウド同期, 複数デバイス対応
+### 将来
+発売日通知機能など（`FUTURE_FEATURES.md`）
 
 ## Notes for AI Development
 
 - README.md contains comprehensive Japanese specifications
 - Project structure follows standard SwiftUI + SwiftData architecture
 - Use iOS 17.0+ APIs (SwiftData, modern SwiftUI features)
+- 残タスクの一覧は `TODO.md`、設計書は `docs/` を参照
 - Follow Apple's Human Interface Guidelines for iOS
 - Implement proper error handling for data operations
 - Support both Light and Dark modes

@@ -7,7 +7,11 @@
 - [x] Phase 3: 買い物リスト機能
 - [x] Phase 4: 保有品管理機能
 - [x] Phase 5: 統計機能（Swift Charts）
+- [x] Phase 6: 設定機能（カテゴリー管理・CSV エクスポート・全データ削除・アプリ情報）
 - [x] サブスクリプション機能（StoreKit 2 / Free・Pro プラン）
+- [x] 統計画面の Free ユーザー向けマスキング表示
+- [x] アカウント機能（Supabase Auth: ログイン・登録・プロフィール）
+- [x] クラウド同期基盤（Supabase DB / Storage、オフラインファースト同期、画像同期）
 - [x] PrivacyInfo.xcprivacy 作成（UserDefaults の CA92.1 宣言）
 - [x] NSPhotoLibraryUsageDescription 追加（Info.plist キー）
 - [x] デプロイメントターゲットを iOS 18.0 → 17.0 に変更（全6箇所）
@@ -16,16 +20,20 @@
 
 ## 開発タスク
 
-### Phase 6: 設定機能
-- [ ] カテゴリー管理（並び替え・追加・編集・削除）
-- [ ] データエクスポート（CSV 出力）
-- [ ] アプリ情報画面（バージョン、ライセンス等）
+### Phase 6 の残り
+- [ ] アプリ情報: ライセンス表記（OSS ライセンス一覧。supabase-swift 等）を追加（バージョン・ビルド・GitHub リンクは実装済み）
+
+### Supabase 本番環境
+- [ ] 本番用 Supabase プロジェクトを作成し、`supabase/migrations/` を適用
+- [ ] `Services/Config.swift` の接続先を本番に切り替える仕組み（現在は環境変数未設定時に `http://127.0.0.1:54321` を使用）
+- [ ] 認証のリダイレクト URL（`myLibra://auth/callback`）を本番側に登録
+- [ ] プライバシーポリシーにクラウド同期時のデータ取り扱いを追記
 
 ### デザイン統一（アイコンベースのリブランディング）
 
 #### 高優先度
 - [ ] AccentColor をオレンジ/ゴールド系（#F5A623 等）に設定（現在未設定＝青）
-- [ ] ハードコードされた `.blue` を AccentColor に統一（WishlistView L147, OwnedItemsView L194）
+- [ ] ハードコードされた `.blue` を AccentColor に統一（WishlistView L147, OwnedItemsView L194, PurchaseDetailView L55, StatisticsView L188/L290）
 - [ ] ランチスクリーンの天秤をアイコンの色（オレンジ/ゴールド）に合わせる
 
 #### 中優先度
@@ -106,7 +114,7 @@
 
 ## リリース手順（順番どおりに実施）
 
-1. **Phase 6 の開発完了** → PR マージ
+1. **デザイン統一・Supabase 本番環境の構築** → PR マージ
 2. **Apple Developer 登録** → コード署名設定・実機ビルド確認
 3. **プライバシーポリシー公開** → GitHub Pages 等で URL を取得
 4. **App Store Connect 設定** → アプリ作成・サブスク商品登録・メタデータ入力
