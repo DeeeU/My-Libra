@@ -286,6 +286,75 @@ open ios/My-Libra.xcodeproj
 
 ---
 
+## 🌐 Web版
+
+iOS版と同じデータ構造（アイテム・カテゴリー・買い物リスト）を Web から使えるようにしたものです。
+アイテムの登録・一覧・編集・売却記録と、損益の集計ができます。
+
+| ディレクトリ | 内容 |
+|---|---|
+| `backend/` | API（Python / Django + Django REST Framework、DB は SQLite） |
+| `frontend/` | 画面（Nuxt 3 + TypeScript） |
+
+外部サービスには接続せず、ローカルだけで起動・テストできます。
+認証はないため、ローカル（自分のPC）での利用を前提としています。インターネットに公開しないでください。
+
+### 必要な環境
+
+- Python 3.11 以上
+- Node.js 20 以上（npm）
+
+### backend の起動
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate          # Windows は .venv\Scripts\activate
+pip install -r requirements-dev.txt
+cp .env.example .env               # 必要に応じて値を変更（.env はコミットしない）
+python manage.py migrate           # SQLite の DB 作成とプリセットカテゴリーの登録
+python manage.py runserver         # http://localhost:8000/api/
+```
+
+主な API:
+
+| メソッド | パス | 内容 |
+|---|---|---|
+| GET / POST | `/api/items/` | 一覧（`status`・`category`・`condition`・`search`・`ordering` で絞り込み）/ 登録 |
+| GET / PATCH / DELETE | `/api/items/{id}/` | 詳細 / 編集 / 削除 |
+| POST | `/api/items/{id}/sell/` | 売却を記録（`sale_price`, `sale_date`）。損益は自動計算 |
+| POST | `/api/items/{id}/unsell/` | 売却記録の取り消し |
+| GET | `/api/stats/summary/?period=` | 損益の集計（`this_month` / `3_months` / `6_months` / `this_year` / `all`） |
+| GET / POST | `/api/categories/` | カテゴリー一覧 / カスタムカテゴリー追加 |
+| GET / POST | `/api/wishlist/` | 買い物リスト |
+| POST | `/api/wishlist/{id}/purchase/` | 買い物リストのアイテムを保有品に変換 |
+
+### frontend の起動
+
+backend を起動した状態で、別のターミナルで実行します。
+
+```bash
+cd frontend
+npm install
+cp .env.example .env               # API の URL を変える場合のみ編集
+npm run dev                        # http://localhost:3000
+```
+
+### テストの実行
+
+```bash
+# backend（pytest）
+cd backend
+source .venv/bin/activate
+pytest
+
+# frontend（vitest）
+cd frontend
+npm test
+```
+
+---
+
 ## 📝 開発の流れ
 
 ### 1. データモデル実装
