@@ -161,7 +161,7 @@ My-Libraは、趣味・コレクション品の購入と販売を記録し、支
 ## 🏗️ アーキテクチャ
 
 ```
-My-Libra/
+ios/My-Libra/
 ├── My_LibraApp.swift               # アプリエントリーポイント
 ├── Models/                          # データモデル
 │   ├── Enums.swift
@@ -277,7 +277,7 @@ cd My-Libra
 
 2. **Xcodeでプロジェクトを開く**
 ```bash
-open My-Libra.xcodeproj
+open ios/My-Libra.xcodeproj
 ```
 
 3. **ビルド & 実行**
