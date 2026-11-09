@@ -302,7 +302,9 @@ iOS版と同じデータ構造（アイテム・カテゴリー・買い物リ�
 ### 必要な環境
 
 - Python 3.11 以上
-- Node.js 20 以上（npm）
+- Node.js 20 以上
+- npm 11 以上（`npm --version` で確認。古い場合は `npm install -g npm@11` で更新）
+  - npm 10 では vitest 4 の依存関係の解決中に npm 自体がクラッシュするため、`frontend/.npmrc` で npm 11 以上を必須にしています
 
 ### backend の起動
 
