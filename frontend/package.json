@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20",
-    "npm": ">=11"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "nuxt dev",
@@ -23,9 +22,10 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/test-utils": "^2.4.0",
+    "cac": "^6.7.14",
     "happy-dom": "^20.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^4.0.0",
+    "vitest": "^3.2.0",
     "vue-tsc": "^3.0.0"
   }
 }
